@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="utf-8">
+<title>Pregled e-Pratećih dokumenata (ePD)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+:root{
+  /* Agronet-ish palette */
+  --bg:#f6f9f5; --card:#ffffff; --ink:#203229; --muted:#58655e;
+  --accent:#4da657; --accent-2:#2f7d32; --border:#e3e9e5;
+  --shadow:0 10px 28px rgba(32,50,41,.08); --radius:14px;
+}
+*{box-sizing:border-box}
+body{margin:0; font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; color:var(--ink); background:var(--bg)}
+.wrap{max-width:1180px; margin:auto; padding:24px}
+h1{margin:0 0 14px; color:var(--accent-2); font-size:28px}
+
+/* Sticky filter bar */
+.sticky{position:sticky; top:0; z-index:50; background:linear-gradient(180deg,var(--bg),#fff); padding:12px 0 14px; border-bottom:1px solid var(--border)}
+.filters{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+.field{display:flex; align-items:center; background:#fff; border:1px solid var(--border); border-radius:12px; padding:9px 12px; box-shadow:var(--shadow)}
+select,input{border:0; outline:0; background:transparent; color:var(--ink); font-size:15px}
+.btn{appearance:none; border-radius:12px; padding:10px 14px; font-weight:600; cursor:pointer; border:1px solid var(--border); background:#fff; color:#41504a}
+.btn-primary{background:linear-gradient(180deg,var(--accent),#3b9145); color:#fff; border:1px solid #3b914555}
+.btn:disabled{opacity:.6; cursor:not-allowed}
+.hint{font-size:12px; color:var(--muted)}
+
+/* Tabs */
+.tabs{display:flex; gap:8px; margin-top:14px}
+.tab{border:1px solid var(--border); background:#fff; padding:8px 12px; border-radius:999px; cursor:pointer; font-weight:600; color:#41504a}
+.tab.active{background:linear-gradient(180deg,#e9f7ee,#fff); border-color:#cde7d2; color:#1f5f33}
+
+/* Cards & tables */
+.card{margin-top:12px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow)}
+.card-header{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px 16px; border-bottom:1px dashed var(--border)}
+.card-body{padding:16px}
+
+table{width:100%; border-collapse:separate; border-spacing:0; overflow:hidden; border-radius:12px; border:1px solid var(--border)}
+th,td{padding:10px 12px; text-align:left}
+thead th{background:linear-gradient(180deg,rgba(47,125,50,.08),transparent); border-bottom:1px solid var(--border); white-space:nowrap}
+tbody tr+tr td{border-top:1px dashed var(--border)}
+tbody tr{background:#fff}
+tbody tr:hover{background:#f3f8f4}
+
+/* Status badges */
+.badge{display:inline-block; padding:.18rem .5rem; border-radius:999px; border:1px solid var(--border); font-size:12px; white-space:nowrap}
+.b-aktivan{background:#fff}
+.b-sender{background:#eaf6ff; color:#0b5f8a; border-color:#bfe4ff}
+.b-finish{background:#e9f7ee; color:#1e6d3a; border-color:#c8ebd3}
+.b-storno{background:#fdeaea; color:#9b1f1f; border-color:#f4c4c4}
+
+/* Pagination */
+.pager{display:flex; justify-content:center; padding:10px 0}
+.link{color:#0b5f8a; text-decoration:none}
+.link:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Pregled e-Pratećih dokumenata</h1>
+
+  <!-- Sticky filter bar -->
+  <div class="sticky">
+    <div class="filters">
+      <div class="field">
+        <select id="fWineYear" aria-label="Odaberite vinsku godinu">
+          <option value="">Vinska godina (sve)</option>
+          <option>2023/2024</option>
+          <option selected>2024/2025</option>
+          <option>2025/2026</option>
+        </select>
+      </div>
+      <div class="field">
+        <select id="fCreatedYear" aria-label="Godina kreiranja ePD-a">
+          <option value="">Godina kreiranja (sve)</option>
+          <option>2024</option>
+          <option selected>2025</option>
+          <option>2026</option>
+        </select>
+      </div>
+      <div class="field">
+        <input id="fSearch" placeholder="Pretraži po MVV / primatelju / pošiljatelju" />
+      </div>
+      <button class="btn" id="btnReset">Poništi filtere</button>
+      <div style="flex:1"></div>
+      <button class="btn-primary" id="btnNew">Kreiraj novi ePD</button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" data-tab="sender">Pošiljatelj</button>
+    <button class="tab" data-tab="receiver">Primatelj</button>
+  </div>
+
+  <!-- Sender table -->
+  <div class="card" id="card-sender">
+    <div class="card-header">
+      <div><b>Pošiljatelj</b></div>
+      <div class="hint">Klik na MVV otvara detalje ePD-a.</div>
+    </div>
+    <div class="card-body">
+      <table id="tbl-sender">
+        <thead>
+          <tr>
+            <th>Ref. broj (MVV)</th>
+            <th>Vrsta robe</th>
+            <th>Kategorija / Sorta</th>
+            <th>Dodatni podaci</th>
+            <th>Količina</th>
+            <th>Datum kreiranja</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div class="pager"><button class="btn" id="more-sender">Prikaži još</button></div>
+    </div>
+  </div>
+
+  <!-- Receiver table -->
+  <div class="card" id="card-receiver" style="display:none">
+    <div class="card-header">
+      <div><b>Primatelj</b></div>
+      <div class="hint">Klik na MVV otvara detalje ePD-a.</div>
+    </div>
+    <div class="card-body">
+      <table id="tbl-receiver">
+        <thead>
+          <tr>
+            <th>Ref. broj (MVV)</th>
+            <th>Vrsta robe</th>
+            <th>Kategorija / Sorta</th>
+            <th>Dodatni podaci</th>
+            <th>Količina</th>
+            <th>Datum kreiranja</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div class="pager"><button class="btn" id="more-receiver">Prikaži još</button></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ======= Demo dataset (zamijeni API-jem) ======= */
+const dataset = [
+  // role: 'sender' or 'receiver'
+  {id:'1', role:'sender',  mvv:'1/2025', vg:'2024/2025', created:'12.1.2025. 09:12', status:'Završen',
+   vrsta:'Pretpakovine (≥ 2 l)', kat:'Vino', info:'BV073 / Graševina', kolicina:'50 l'},
+  {id:'2', role:'sender',  mvv:'2/2025', vg:'2024/2025', created:'15.2.2025. 11:47', status:'Storniran',
+   vrsta:'Pretpakovine (≥ 2 l)', kat:'Vino', info:'BV073 / Graševina', kolicina:'35 l'},
+  {id:'3', role:'sender',  mvv:'3/2025', vg:'2024/2025', created:'25.2.2025. 15:21', status:'Elektronički potpisan (pošiljatelj)',
+   vrsta:'Vinski proizvod (rinfuza)', kat:'Vino', info:'Crno', kolicina:'30 hl'},
+  {id:'4', role:'sender',  mvv:'4/2025', vg:'2025/2026', created:'10.5.2025. 13:25', status:'Aktivan',
+   vrsta:'Grožđe', kat:'Graševina', info:'bijelo', kolicina:'12 t'},
+
+  {id:'5', role:'receiver', mvv:'1/2025', vg:'2024/2025', created:'12.1.2025. 09:12', status:'Završen',
+   vrsta:'Pretpakovine (≥ 2 l)', kat:'Vino', info:'BV073 / Graševina', kolicina:'50 l'},
+  {id:'6', role:'receiver', mvv:'6/2025', vg:'2024/2025', created:'25.4.2025. 07:03', status:'Aktivan',
+   vrsta:'Pretpakovine (≥ 2 l)', kat:'Vino', info:'BV073 / Graševina', kolicina:'22 l'}
+];
+
+/* ======= Helpers ======= */
+const $ = s => document.querySelector(s);
+const tbodySender = $('#tbl-sender tbody');
+const tbodyReceiver = $('#tbl-receiver tbody');
+
+function badge(status){
+  const cls = status==='Aktivan' ? 'b-aktivan'
+            : status==='Elektronički potpisan (pošiljatelj)' ? 'b-sender'
+            : status==='Završen' ? 'b-finish' : 'b-storno';
+  return `<span class="badge ${cls}">${status}</span>`;
+}
+
+function rowHTML(r){
+  return `<tr>
+    <td><a class="link" href="#" data-id="${r.id}" title="Otvori detalje">${r.mvv}</a></td>
+    <td>${r.vrsta}</td>
+    <td>${r.kat||'—'}</td>
+    <td>${r.info||'—'}</td>
+    <td>${r.kolicina}</td>
+    <td>${r.created}</td>
+    <td>${badge(r.status)}</td>
+  </tr>`;
+}
+
+/* ======= Filtering & rendering ======= */
+let pageSender=1, pageReceiver=1, PAGE=10;
+
+function applyFilters(){
+  const fy = $('#fCreatedYear').value;
+  const fvg = $('#fWineYear').value;
+  const q = ($('#fSearch').value||'').toLowerCase();
+
+  const pass = r =>
+    (!fy || (r.created||'').includes(fy)) &&
+    (!fvg || r.vg===fvg) &&
+    (!q || [r.mvv,r.kat,r.info].join(' ').toLowerCase().includes(q));
+
+  const senders = dataset.filter(r=>r.role==='sender' && pass(r));
+  const receivers = dataset.filter(r=>r.role==='receiver' && pass(r));
+
+  // reset pages
+  pageSender=1; pageReceiver=1;
+
+  renderTable(tbodySender, senders.slice(0,PAGE));
+  renderTable(tbodyReceiver, receivers.slice(0,PAGE));
+
+  $('#more-sender').onclick = ()=> { pageSender++; renderTable(tbodySender, senders.slice(0, PAGE*pageSender)); };
+  $('#more-receiver').onclick = ()=> { pageReceiver++; renderTable(tbodyReceiver, receivers.slice(0, PAGE*pageReceiver)); };
+}
+function renderTable(tbody, rows){
+  tbody.innerHTML = rows.map(rowHTML).join('') || `<tr><td colspan="7" class="hint">Nema podataka za odabrane filtere.</td></tr>`;
+}
+
+/* ======= Tabs ======= */
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    const tab = t.getAttribute('data-tab');
+    $('#card-sender').style.display = tab==='sender' ? 'block' : 'none';
+    $('#card-receiver').style.display = tab==='receiver' ? 'block' : 'none';
+  });
+});
+
+/* ======= Actions ======= */
+$('#btnReset').onclick = ()=>{
+  $('#fWineYear').value = '';
+  $('#fCreatedYear').value = '';
+  $('#fSearch').value = '';
+  applyFilters();
+};
+
+$('#btnNew').onclick = ()=>{
+  // promijeni prema tvojoj ruti (npr. /agronet/epd/novi)
+  alert('Otvorit će se forma za kreiranje novog ePD-a (zamijeni alert s navigacijom).');
+};
+
+document.body.addEventListener('click', (e)=>{
+  const a = e.target.closest('a[data-id]');
+  if(a){
+    e.preventDefault();
+    const id = a.getAttribute('data-id');
+    // ovdje navigiraj na "pojedinačni ePD" (operativni ekran) s ID-jem
+    // npr. window.location.href = `/agronet/epd/${id}`;
+    alert('Otvori detalje ePD-a ID=' + id + ' (zamijeni alert s navigacijom).');
+  }
+});
+
+/* ======= Init ======= */
+applyFilters();
+</script>
+</body>
+</html>
