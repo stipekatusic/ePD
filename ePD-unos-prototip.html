@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ePD – 2-step unos</title>
+<style>
+  /* ===== Tema (desktop, Agronet paleta) ===== */
+  :root{
+    --bg:#f6f9f5; --card:#fff; --text:#203229; --muted:#5e6b63;
+    --accent:#4da657; --accent-2:#2f7d32; --danger:#d64545;
+    --border:#e3e9e5; --ring:#2f7d3233; --shadow:0 10px 28px rgba(32,50,41,.08);
+    --radius:14px; --input-bg:#fff; --input-text:#22332a;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0; font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; background:var(--bg); color:var(--text)}
+  .wrap{max-width:1200px; margin-inline:auto; padding:24px}
+
+  /* Header + stepper (2 koraka) */
+  header{position:sticky; top:0; z-index:10; padding:14px 0 6px; background:linear-gradient(180deg,var(--bg) 70%, transparent)}
+  h1{margin:0; color:var(--accent-2); font-size:24px}
+  .stepper{display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-top:10px; position:relative}
+  .stepper .progress{position:absolute; left:10px; right:10px; top:23px; height:2px; background:var(--border)}
+  .stepper .progress span{display:block; height:100%; width:0; background:var(--accent-2); transition:width .25s ease}
+  .step{display:flex; align-items:center; gap:8px; padding:6px 12px; border:1px solid var(--border); border-radius:999px; background:#fff; color:var(--text); cursor:pointer}
+  .step[data-active="true"]{border-color:var(--accent-2); box-shadow:0 0 0 3px var(--ring)}
+  .dot{display:grid; place-items:center; width:18px; height:18px; border-radius:50%; background:var(--accent-2); color:#fff; font:700 12px/1 system-ui}
+
+  /* Kartice, grid (desktop) */
+  .grid{display:grid; grid-template-columns: 1.15fr .85fr; gap:20px}
+  .card{background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow)}
+  .card-header{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px 16px; border-bottom:1px dashed var(--border)}
+  .card-body{padding:16px}
+  .actions{display:flex; gap:8px; justify-content:flex-end}
+
+  /* Forme */
+  fieldset{border:1px dashed var(--border); border-radius:12px; padding:12px 12px 4px; margin:0 0 12px}
+  fieldset legend{padding:0 6px; color:var(--muted); font-weight:600}
+  label{display:block; font-size:13px; color:var(--muted); margin:4px 2px}
+  .rows{display:grid; grid-template-columns:repeat(12,1fr); gap:12px}
+  .col-12{grid-column:span 12}.col-6{grid-column:span 6}.col-4{grid-column:span 4}.col-3{grid-column:span 3}.col-2{grid-column:span 2}
+
+  .field{display:flex; align-items:center; background:var(--input-bg); border:1px solid var(--border); border-radius:12px; padding:10px 12px; transition:border .15s, box-shadow .15s}
+  .field:focus-within{border-color:var(--accent-2); box-shadow:0 0 0 4px var(--ring)}
+  .field input,.field select{background:transparent; border:0; outline:none; width:100%; font-size:15px; color:var(--input-text)}
+  select, option{background:var(--input-bg); color:var(--input-text)} /* kontrast fix */
+
+  .inline{display:flex; gap:6px; flex-wrap:wrap}
+  .chip{display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border:1px solid var(--border); border-radius:999px; cursor:pointer; user-select:none; background:#fff}
+  .chip input{accent-color:var(--accent)}
+
+  .btn{appearance:none; border:0; border-radius:12px; padding:10px 14px; font-weight:600; cursor:pointer}
+  .btn-primary{background:linear-gradient(180deg,var(--accent),#3b9145); color:#fff; border:1px solid #3b914555}
+  .btn-ghost{background:#fff; color:var(--muted); border:1px solid var(--border)}
+  .btn-danger{background:linear-gradient(180deg,var(--danger),#c33); color:#fff}
+  .btn:disabled{opacity:.6; cursor:not-allowed}
+
+  table{width:100%; border-collapse:separate; border-spacing:0; overflow:hidden; border-radius:12px; border:1px solid var(--border)}
+  th,td{padding:10px 12px; text-align:left}
+  thead th{background:linear-gradient(180deg,rgba(47,125,50,.08),transparent); color:var(--text); border-bottom:1px solid var(--border)}
+  tbody tr + tr td{border-top:1px dashed var(--border)}
+
+  .totals .group{border:1px dashed var(--border); border-radius:12px; padding:10px; margin-bottom:12px}
+  .totals h3{margin:.2rem 0 .6rem 0; font-size:15px; color:var(--muted)}
+  .kv{display:grid; grid-template-columns:1fr auto; gap:6px}
+
+  .hint{font-size:12px; color:var(--muted)}
+  .error{color:var(--danger); font-size:13px}
+  .success{color:#2f8f59; font-size:13px}
+
+  .footer-bar{display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 16px; border-top:1px dashed var(--border); background:linear-gradient(0deg,var(--card),var(--card) 80%, transparent); border-bottom-left-radius:var(--radius); border-bottom-right-radius:var(--radius)}
+
+  /* ===== Step 2: PDF-look (monokromatski, bez printa) ===== */
+  .pdf{background:#fff; color:#000; border:1px solid #000; border-radius:12px}
+  .pdf .pdf-header{padding:16px 16px 8px; border-bottom:1px solid #000}
+  .pdf h2{margin:0 0 6px 0; font:700 18px/1.2 Arial, Helvetica, sans-serif; color:#000}
+  .pdf .meta{font:12px/1.4 Arial, Helvetica, sans-serif}
+  .pdf .pdf-body{padding:12px 16px}
+  .pdf table{border:1px solid #000; border-radius:0}
+  .pdf th,.pdf td{border-top:1px solid #000}
+  .pdf thead th{background:#fff; color:#000; border-bottom:1px solid #000}
+  .pdf .cols{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  .pdf .block{border:1px solid #000; padding:8px}
+  .pdf .block h3{margin:0 0 6px 0; font:700 13px Arial, Helvetica, sans-serif}
+  .pdf .block .row{display:grid; grid-template-columns:160px 1fr; gap:6px; font:12px Arial, Helvetica, sans-serif; padding:2px 0}
+  .pdf .pdf-footer{padding:8px 16px 14px; border-top:1px solid #000; font:12px Arial, Helvetica, sans-serif; display:flex; justify-content:space-between}
+  .pdf .label{color:#000}
+
+  /* State helpers */
+  .hidden{display:none !important}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Prateći dokument (ePD)</h1>
+      <div class="stepper" aria-label="Koraci">
+        <button type="button" class="step" id="navStep1" data-active="true" aria-current="step"><span class="dot">1</span> 1) Unos</button>
+        <button type="button" class="step" id="navStep2"><span class="dot">2</span> 2) Pretpregled & kreiranje</button>
+      </div>
+    </header>
+
+    <!-- ===== STEP 1: Unos + dostupne količine ===== -->
+    <section id="step1" class="grid">
+      <!-- Lijevo: forma -->
+      <form id="epdForm" class="card" novalidate>
+        <div class="card-header">
+          <div class="inline" style="align-items:center">
+            <h2 style="margin:0">Unos stavki i dostavnih podataka</h2>
+          </div>
+          <div class="inline" style="align-items:center">
+            <span class="hint">Vinska godina</span>
+            <div class="field" style="min-width:160px"><select id="vgodina"><option>2024/2025</option><option selected>2025/2026</option><option>2026/2027</option></select></div>
+          </div>
+        </div>
+        <div class="card-body">
+          <!-- Stavka robe -->
+          <fieldset>
+            <legend>Stavka robe</legend>
+            <div class="rows">
+              <div class="col-6">
+                <label for="vrsta">Vrsta robe</label>
+                <div class="field"><select id="vrsta" required>
+                  <option value="">– Odaberite –</option>
+                  <option value="grozdje">Grožđe</option>
+                  <option value="rinfuza">Vinski proizvod otvorena roba (rinfuza)</option>
+                  <option value="pretpakovine">Pretpakovine</option>
+                  <option value="ocat">Vinski ocat</option>
+                </select></div>
+                <div class="hint">Za grožđe se provjerava dostupna količina iz Izjava.</div>
+              </div>
+              <div class="col-6">
+                <label for="kategorija">Kategorija vinskog proizvoda</label>
+                <div class="field"><select id="kategorija" disabled>
+                  <option value="">– Odaberite –</option>
+                  <optgroup label="Mošt">
+                    <option>mošt</option>
+                    <option>djelomično fermentirani mošt</option>
+                    <option>djelomično ferm. mošt od prosušenog grožđa</option>
+                    <option>koncentrirani mošt</option>
+                    <option>rektificirani koncentrirani mošt</option>
+                  </optgroup>
+                  <optgroup label="Vino">
+                    <option>vino</option>
+                    <option>mlado vino u fermentaciji</option>
+                    <option>likersko vino</option>
+                    <option>pjenušavo vino</option>
+                    <option>kvalitetno pjenušavo vino</option>
+                    <option>kvalitetno aromatično pjenušavo vino</option>
+                    <option>gazirano pjenušavo vino</option>
+                    <option>biser vino</option>
+                    <option>gazirano biser vino</option>
+                    <option>vino od prosušenog grožđa</option>
+                    <option>vino od prezrelog grožđa</option>
+                  </optgroup>
+                </select></div>
+              </div>
+
+              <div class="col-6">
+                <label>Dodatni podaci</label>
+                <div class="inline" id="dodatni">
+                  <label class="chip"><input type="checkbox" name="boja" value="bijelo"> bijelo</label>
+                  <label class="chip"><input type="checkbox" name="boja" value="roze"> roze</label>
+                  <label class="chip"><input type="checkbox" name="boja" value="crno"> crno</label>
+                  <span class="chip" title="Upišite sortu">🍇 <input id="sorta" placeholder="sorta" aria-label="Sorta" style="width:120px"></span>
+                </div>
+              </div>
+
+              <div class="col-6">
+                <label>Količina</label>
+                <div class="rows">
+                  <div class="col-6"><div class="field"><input id="kolicina" inputmode="decimal" placeholder="0" aria-label="Količina"></div></div>
+                  <div class="col-6"><div class="field"><select id="jedinica"><option value="kg">kg</option><option value="t" selected>tona</option><option value="hl">hl</option><option value="l">litra</option></select></div></div>
+                </div>
+                <div class="hint">Automatska konverzija: 1000 kg = 1 t, 100 l = 1 hl.</div>
+              </div>
+
+              <div class="col-6">
+                <label for="zona">Vinogradarska zona</label>
+                <div class="field"><select id="zona"><option>A</option><option>B</option><option>C I</option><option selected>C II</option><option>C III</option></select></div>
+              </div>
+              <div class="col-6">
+                <label for="podregija">Podregija / ZOI / ZOZP</label>
+                <div class="field"><input id="podregija" placeholder="npr. Slavonija / ZOI ..."></div>
+              </div>
+              <div class="col-12">
+                <label>Namjena prijevoza</label>
+                <div class="inline">
+                  <label class="chip"><input type="radio" name="namjena" value="prerada"> do vinarija radi daljnje prerade</label>
+                  <label class="chip"><input type="radio" name="namjena" value="prodaja-mjesta"> prodaja na prodajnim mjestima</label>
+                  <label class="chip"><input type="radio" name="namjena" value="izravna"> izravna prodaja kupcu</label>
+                  <label class="chip"><input type="radio" name="namjena" value="potrosnja"> konačna/krajnja potrošnja</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="actions" style="margin-top:12px">
+              <button type="button" class="btn btn-ghost" id="razbistri">Očisti polja</button>
+              <button type="button" class="btn btn-primary" id="dodaj">Dodaj stavku</button>
+            </div>
+            <div id="addError" class="error" role="alert" style="display:none;margin-top:6px"></div>
+          </fieldset>
+
+          <!-- Tablica stavki -->
+          <fieldset>
+            <legend>Stavke na ePD-u</legend>
+            <table id="stavkeTbl" aria-label="Stavke">
+              <thead><tr>
+                <th>Vrsta</th><th>Kategorija/Sorta</th><th>Boja</th><th>Količina</th><th>Zona</th><th>Namjena</th><th></th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </fieldset>
+
+          <!-- Dostavni podaci -->
+          <fieldset>
+            <legend>Pošiljatelj</legend>
+            <div class="rows">
+              <div class="col-4"><label>OIB</label><div class="field"><input id="ps-oib" value="12345678901" readonly></div></div>
+              <div class="col-4"><label>Naziv</label><div class="field"><input id="ps-naziv" value="Vinarija Primjer d.o.o." readonly></div></div>
+              <div class="col-4"><label>Adresa</label><div class="field"><input id="ps-adresa" value="Ulica 1, 10000 Zagreb" readonly></div></div>
+              <div class="col-12"><label>Mjesto otpreme (adresa ili lokacija)</label><div class="field"><input id="mj-otpreme" placeholder="Unesite adresu ili lokaciju" required></div></div>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Primatelj</legend>
+            <div class="rows">
+              <div class="col-3"><label>OIB</label><div class="field"><input id="pr-oib" inputmode="numeric" pattern="[0-9]{11}" placeholder="11 znamenki"></div></div>
+              <div class="col-3"><label>Naziv</label><div class="field"><input id="pr-naziv" placeholder="Naziv subjekta"></div></div>
+              <div class="col-6"><label>Adresa</label><div class="field"><input id="pr-adresa" placeholder="Adresa"></div></div>
+              <div class="col-12"><label>Mjesto prijema (adresa ili lokacija)</label><div class="field"><input id="mj-prijema" placeholder="Unesite adresu ili lokaciju" required></div></div>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Prijevoznik</legend>
+            <div class="rows">
+              <div class="col-3"><label>OIB</label><div class="field"><input id="pv-oib" inputmode="numeric" placeholder="neobavezno"></div></div>
+              <div class="col-3"><label>Naziv</label><div class="field"><input id="pv-naziv" placeholder="Naziv prijevoznika" required></div></div>
+              <div class="col-6"><label>Adresa</label><div class="field"><input id="pv-adresa" placeholder="Adresa prijevoznika" required></div></div>
+              <div class="col-12"><label>Vrsta prijevoza i registracijski broj prijevoznog sredstva</label><div class="field"><input id="pv-vrsta" placeholder="npr. Kamion – ZG-123-AB" required></div></div>
+            </div>
+          </fieldset>
+        </div>
+
+        <div class="footer-bar">
+          <div>
+            <div id="formError" class="error" style="display:none"></div>
+            <div id="formOk" class="success" style="display:none">Sve izgleda dobro. Možete na pregled.</div>
+          </div>
+          <div class="actions">
+            <button type="button" class="btn btn-primary" id="toPreview">Nastavi na pregled</button>
+          </div>
+        </div>
+      </form>
+
+      <!-- Desno: sažeci i dostupne količine -->
+      <aside class="card totals" aria-label="Sažeci">
+        <div class="card-header"><h2>Sažeci i dostupne količine</h2></div>
+        <div class="card-body">
+          <div class="group" id="ukGrozdje">
+            <h3>Ukupno na ePD-u – Grožđe (t)</h3>
+            <div class="kv" id="kv-grozdje"><div class="muted">— Nema stavki</div><div></div></div>
+          </div>
+          <div class="group" id="ukMostVino">
+            <h3>Ukupno na ePD-u – Mošt/Vino (hl)</h3>
+            <div class="kv" id="kv-mostvino"><div class="muted">— Nema stavki</div><div></div></div>
+          </div>
+          <div class="group" id="ukOcat">
+            <h3>Ukupno na ePD-u – Vinski ocat (hl)</h3>
+            <div class="kv" id="kv-ocat"><div class="muted">— 0</div><div></div></div>
+          </div>
+          <div class="group">
+            <h3>Dostupne količine – Grožđe (t)</h3>
+            <div class="kv" id="kv-dostupno">
+              <!-- DEMO dostupne količine; u praksi dolazi iz ISAP-a -->
+              <div>Graševina</div><div data-qty>25</div>
+              <div>Plavac mali</div><div data-qty>12</div>
+              <div>Malvazija</div><div data-qty>7</div>
+              <div>Rajnski rizling</div><div data-qty>5</div>
+            </div>
+            <div class="hint">Simulacija dostupnih količina iz Izjava.</div>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <!-- ===== STEP 2: Pretpregled (PDF look) ===== -->
+    <section id="step2" class="hidden">
+      <div class="pdf">
+        <div class="pdf-header">
+          <h2>Elektronički prateći dokument (ePD)</h2>
+          <div class="meta"><span class="label">MVV:</span> <span id="pvMVV">—</span> &nbsp; | &nbsp; <span class="label">Vinska godina:</span> <span id="pvVG">—</span></div>
+        </div>
+        <div class="pdf-body">
+          <div class="cols">
+            <div class="block">
+              <h3>Pošiljatelj</h3>
+              <div class="row"><div>OIB</div><div id="pvPsoib">—</div></div>
+              <div class="row"><div>Naziv</div><div id="pvPsnaz">—</div></div>
+              <div class="row"><div>Adresa</div><div id="pvPsadr">—</div></div>
+              <div class="row"><div>Mjesto otpreme</div><div id="pvMjOtp">—</div></div>
+            </div>
+            <div class="block">
+              <h3>Primatelj</h3>
+              <div class="row"><div>OIB</div><div id="pvProib">—</div></div>
+              <div class="row"><div>Naziv</div><div id="pvPrnaz">—</div></div>
+              <div class="row"><div>Adresa</div><div id="pvPradr">—</div></div>
+              <div class="row"><div>Mjesto prijema</div><div id="pvMjPr">—</div></div>
+            </div>
+          </div>
+
+          <div class="block" style="margin-top:12px">
+            <h3>Prijevoznik</h3>
+            <div class="row"><div>OIB</div><div id="pvPvoib">—</div></div>
+            <div class="row"><div>Naziv</div><div id="pvPvnaz">—</div></div>
+            <div class="row"><div>Adresa</div><div id="pvPvadr">—</div></div>
+            <div class="row"><div>Vrsta / Reg. broj</div><div id="pvPvvrs">—</div></div>
+          </div>
+
+          <div style="margin-top:12px">
+            <table id="previewItems">
+              <thead>
+                <tr><th colspan="6">Stavke</th></tr>
+                <tr><th>Vrsta</th><th>Kategorija/Sorta</th><th>Boja</th><th>Količina</th><th>Zona</th><th>Namjena</th></tr>
+              </thead>
+              <tbody><tr><td colspan="6">Nema stavki.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="pdf-footer">
+          <div><span class="label">Datum kreiranja:</span> <span id="pvDate">—</span></div>
+          <div><span class="label">Potpis (pošiljatelj/primatelj):</span> __________________________</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px">
+        <div class="footer-bar">
+          <div>
+            <div id="previewMsg" class="hint">Pregled je informativan (nije za ispis).</div>
+            <div id="createOk" class="success" style="display:none"></div>
+          </div>
+          <div class="actions">
+            <button type="button" class="btn btn-ghost" id="backToEdit">Natrag</button>
+            <button type="button" class="btn btn-primary" id="createEpd">Kreiraj ePD</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+<script>
+  // ===== Stanje i helperi =====
+  const state = { items: [] };
+  const $ = id => document.getElementById(id);
+  const fmt = n => (Math.round(n * 100) / 100).toLocaleString('hr-HR');
+
+  // Stepper nav (2 koraka)
+  const stepProgress = $('stepProgress');
+  function setActiveStep(stepIdx){ // 0 ili 1
+    document.querySelectorAll('.step').forEach((b,i)=>{
+      const active = i===stepIdx; b.dataset.active = active ? 'true' : 'false';
+      b.setAttribute('aria-current', active ? 'step' : 'false');
+    });
+    stepProgress.style.width = (stepIdx*100)+'%';
+  }
+  $('navStep1').onclick = ()=> showStep(0);
+  $('navStep2').onclick = ()=> { if(validateStep1(true)) showStep(1); };
+
+  function showStep(idx){
+    if(idx===0){ $('step1').classList.remove('hidden'); $('step2').classList.add('hidden'); setActiveStep(0); }
+    if(idx===1){ renderPreview(); $('step1').classList.add('hidden'); $('step2').classList.remove('hidden'); setActiveStep(1); }
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  // Dinamika polja
+  const vrsta = $('vrsta'), kategorija = $('kategorija'), jedinica = $('jedinica'), kolicina = $('kolicina');
+  vrsta.addEventListener('change', () => {
+    const v = vrsta.value;
+    if(v === 'rinfuza' || v === 'pretpakovine'){ kategorija.disabled = false; if(!['hl','l'].includes(jedinica.value)) jedinica.value='hl'; }
+    else { kategorija.disabled = true; kategorija.value = ''; if(v === 'grozdje' && !['kg','t'].includes(jedinica.value)) jedinica.value='t'; }
+  });
+  jedinica.addEventListener('change', () => {
+    const val = parseFloat(String(kolicina.value).replace(',','.')); if(!isFinite(val)) return;
+    const u = jedinica.value;
+    if(u === 't' && val >= 1000){ kolicina.value = fmt(val/1000).replace('.',','); }
+    if(u === 'kg' && val < 1000){ kolicina.value = fmt(val*1000).replace('.',','); }
+    if(u === 'hl' && val >= 100){ kolicina.value = fmt(val/100).replace('.',','); }
+    if(u === 'l' && val < 100){ kolicina.value = fmt(val*100).replace('.',','); }
+  });
+
+  // Dodavanje/uređivanje/brisanje stavki
+  const tbody = document.querySelector('#stavkeTbl tbody');
+  function showAddError(msg){ const e=$('addError'); e.textContent=msg; e.style.display='block'; }
+  function clearInputs(){
+    vrsta.value=''; kategorija.value=''; kategorija.disabled=true; $('sorta').value=''; $('kolicina').value=''; jedinica.value='t';
+    document.querySelectorAll('#dodatni input[name="boja"]').forEach(x=>x.checked=false);
+    document.querySelectorAll('input[name="namjena"]').forEach(x=>x.checked=false);
+  }
+  function renderTable(){
+    tbody.innerHTML='';
+    if(!state.items.length){ tbody.innerHTML='<tr><td colspan="7" class="muted">Još nema stavki.</td></tr>'; return; }
+    state.items.forEach(it=>{
+      const tr=document.createElement('tr');
+      const labelVrsta = ({grozdje:'Grožđe', rinfuza:'Rinfuza', pretpakovine:'Pretpakovine', ocat:'Vinski ocat'})[it.v];
+      const catSort = it.v==='grozdje' ? (it.sorta||'—') : (it.kat||'—');
+      const boja = it.boje?.join(', ') || '—';
+      tr.innerHTML = `
+        <td>${labelVrsta}</td>
+        <td>${catSort}</td>
+        <td>${boja}</td>
+        <td>${fmt(it.kol)} ${it.u}</td>
+        <td>${it.zona}</td>
+        <td>${it.namjena}</td>
+        <td style="text-align:right">
+          <button class="btn btn-ghost" data-edit="${it.id}">Uredi</button>
+          <button class="btn btn-danger" data-del="${it.id}">Obriši</button>
+        </td>`;
+      tbody.append(tr);
+    });
+  }
+  tbody.addEventListener('click', (e)=>{
+    const del = e.target.getAttribute('data-del');
+    const edit = e.target.getAttribute('data-edit');
+    if(del){ state.items = state.items.filter(x=>x.id!==del); renderTable(); updateTotals(); return; }
+    if(edit){
+      const it = state.items.find(x=>x.id===edit);
+      if(it){
+        vrsta.value=it.v; vrsta.dispatchEvent(new Event('change'));
+        kategorija.value=it.kat; $('sorta').value=it.sorta||'';
+        document.querySelectorAll('#dodatni input[name="boja"]').forEach(x=>x.checked = it.boje.includes(x.value));
+        $('kolicina').value=it.kol; jedinica.value=it.u; $('zona').value=it.zona; $('podregija').value=it.podregija;
+        document.querySelectorAll('input[name="namjena"]').forEach(x=>x.checked=(x.value===it.namjena));
+        state.items = state.items.filter(x=>x.id!==edit);
+        renderTable(); updateTotals();
+      }
+    }
+  });
+
+  $('razbistri').onclick = clearInputs;
+  $('dodaj').onclick = ()=>{
+    $('addError').style.display='none';
+    const v = vrsta.value;
+    const kat = kategorija.disabled ? '' : kategorija.value;
+    const boje = Array.from(document.querySelectorAll('#dodatni input[name="boja"]:checked')).map(x=>x.value);
+    const sorta = $('sorta').value.trim();
+    const kol = parseFloat(String($('kolicina').value).replace(',','.'));
+    const u = $('jedinica').value;
+    const zona = $('zona').value; const podregija = $('podregija').value.trim();
+    const namjena = (document.querySelector('input[name="namjena"]:checked')||{}).value||'';
+
+    if(!v) return showAddError('Odaberite vrstu robe.');
+    if(!isFinite(kol) || kol<=0) return showAddError('Unesite valjanu količinu veću od 0.');
+    if((v==='rinfuza' || v==='pretpakovine') && !kat) return showAddError('Odaberite kategoriju vinskog proizvoda.');
+    if(!namjena) return showAddError('Odaberite namjenu prijevoza.');
+
+    const id = self.crypto && crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random());
+    state.items.push({id, v, kat, boje, sorta, kol, u, zona, podregija, namjena});
+    renderTable(); updateTotals(); clearInputs();
+  };
+
+  // Sažeci i dostupnost
+  function updateTotals(){
+    // Grožđe po sortama (t)
+    const grapes = state.items.filter(i=>i.v==='grozdje');
+    const kvG = $('kv-grozdje'); kvG.innerHTML='';
+    if(grapes.length){
+      const bySort = new Map();
+      grapes.forEach(g=>{
+        const key = g.sorta||'— (nespecificirano)';
+        const t = g.u==='kg' ? g.kol/1000 : (g.u==='t' ? g.kol : 0);
+        bySort.set(key, (bySort.get(key)||0) + t);
+      });
+      for(const [s,qty] of bySort){ kvG.insertAdjacentHTML('beforeend', `<div>${s}</div><div>${fmt(qty)}</div>`); }
+    } else kvG.innerHTML='<div class="muted">— Nema stavki</div><div></div>';
+
+    // Tekućine (hl) po boji
+    const fluids = state.items.filter(i=>i.v==='rinfuza' || i.v==='pretpakovine');
+    const byColor = {bijelo:0, crno:0, roze:0};
+    fluids.forEach(f=>{
+      const hl = f.u==='l' ? f.kol/100 : (f.u==='hl' ? f.kol : 0);
+      (f.boje?.length?f.boje:['—']).forEach(b=>{ if(byColor[b]!==undefined) byColor[b]+=hl; });
+    });
+    const kvMV = $('kv-mostvino'); kvMV.innerHTML='';
+    const rows = Object.entries(byColor).filter(([,v])=>v>0);
+    if(rows.length){ rows.forEach(([k,v])=> kvMV.insertAdjacentHTML('beforeend', `<div>${k}</div><div>${fmt(v)}</div>`)); }
+    else kvMV.innerHTML='<div class="muted">— Nema stavki</div><div></div>';
+
+    // Ocat (hl) ukupno
+    const ocat = state.items.filter(i=>i.v==='ocat');
+    const hlO = ocat.reduce((acc,o)=> acc + (o.u==='l'? o.kol/100 : (o.u==='hl'?o.kol:0)), 0);
+    $('kv-ocat').innerHTML = `<div>Ukupno</div><div>${fmt(hlO)}</div>`;
+
+    // ažuriraj dostupnost grožđa
+    validateAvailability();
+  }
+
+  function validateAvailability(){
+    const available = Array.from($('kv-dostupno').querySelectorAll('[data-qty]')).map(el=>({
+      el, naziv: el.previousElementSibling.textContent.trim(), qty: parseFloat(el.textContent.replace(',','.'))
+    }));
+    available.forEach(a=> a.el.style.color = '');
+    const grapes = state.items.filter(i=>i.v==='grozdje');
+    const used = new Map();
+    grapes.forEach(g=>{
+      const key = g.sorta||'— (nespecificirano)';
+      const t = g.u==='kg' ? g.kol/1000 : (g.u==='t' ? g.kol : 0);
+      used.set(key, (used.get(key)||0) + t);
+    });
+    let ok = true;
+    available.forEach(a=>{
+      const u = used.get(a.naziv)||0; const remain = a.qty - u; a.el.textContent = fmt(Math.max(remain,0));
+      if(remain < 0){ a.el.style.color = 'var(--danger)'; ok = false; }
+    });
+    return ok;
+  }
+
+  // Validacija Step 1 i prelazak na Step 2
+  function validateStep1(showMessages=false){
+    const hasItems = state.items.length>0;
+    const must = $('mj-otpreme').value && $('mj-prijema').value && $('pv-naziv').value && $('pv-adresa').value && $('pv-vrsta').value;
+    const availOk = validateAvailability();
+    const ok = hasItems && must && availOk;
+    if(showMessages){
+      $('formOk').style.display = ok ? 'block' : 'none';
+      $('formError').style.display = ok ? 'none' : 'block';
+      $('formError').textContent = ok ? '' : 'Dodajte barem jednu stavku, popunite obavezna polja i provjerite dostupnost grožđa.';
+    }
+    return ok;
+  }
+  $('toPreview').onclick = ()=>{ if(validateStep1(true)){ renderPreview(); showStep(1); } };
+  ['mj-otpreme','mj-prijema','pv-naziv','pv-adresa','pv-vrsta','pr-oib','pr-naziv','pr-adresa'].forEach(id=> $(id).addEventListener('input', ()=> validateStep1(false)));
+
+  // Pretpregled (Step 2)
+  function renderPreview(){
+    $('pvVG').textContent = $('vgodina').value;
+    $('pvPsoib').textContent = $('ps-oib').value||'—';
+    $('pvPsnaz').textContent = $('ps-naziv').value||'—';
+    $('pvPsadr').textContent = $('ps-adresa').value||'—';
+    $('pvMjOtp').textContent = $('mj-otpreme').value||'—';
+    $('pvProib').textContent = $('pr-oib').value||'—';
+    $('pvPrnaz').textContent = $('pr-naziv').value||'—';
+    $('pvPradr').textContent = $('pr-adresa').value||'—';
+    $('pvMjPr').textContent = $('mj-prijema').value||'—';
+    $('pvPvoib').textContent = $('pv-oib').value||'—';
+    $('pvPvnaz').textContent = $('pv-naziv').value||'—';
+    $('pvPvadr').textContent = $('pv-adresa').value||'—';
+    $('pvPvvrs').textContent = $('pv-vrsta').value||'—';
+    $('pvDate').textContent = new Date().toLocaleString('hr-HR');
+
+    const tb = document.querySelector('#previewItems tbody');
+    tb.innerHTML='';
+    if(!state.items.length){ tb.innerHTML='<tr><td colspan="6">Nema stavki.</td></tr>'; }
+    else{
+      state.items.forEach(it=>{
+        const labelVrsta = ({grozdje:'Grožđe', rinfuza:'Rinfuza', pretpakovine:'Pretpakovine', ocat:'Vinski ocat'})[it.v];
+        const catSort = it.v==='grozdje' ? (it.sorta||'—') : (it.kat||'—');
+        const boja = it.boje?.join(', ') || '—';
+        tb.insertAdjacentHTML('beforeend', `<tr>
+          <td>${labelVrsta}</td><td>${catSort}</td><td>${boja}</td>
+          <td>${fmt(it.kol)} ${it.u}</td><td>${it.zona}</td><td>${it.namjena}</td>
+        </tr>`);
+      });
+    }
+    $('pvMVV').textContent = '—'; // prikazuje se tek nakon kreiranja
+    $('createOk').style.display = 'none';
+  }
+
+  $('backToEdit').onclick = ()=> showStep(0);
+
+  $('createEpd').onclick = ()=>{
+    // simulacija kreiranja: MVV + lock
+    const mvv = 'MVV/' + new Date().getFullYear() + '/' + String(Math.floor(Math.random()*90000)+10000);
+    $('pvMVV').textContent = mvv;
+    $('createOk').textContent = 'ePD kreiran (simulacija). Broj: ' + mvv;
+    $('createOk').style.display = 'block';
+    // opcionalno: onemogući daljnje izmjene
+    $('createEpd').disabled = true;
+    $('backToEdit').disabled = true;
+  };
+
+  // Init
+  (function init(){ setActiveStep(0); renderTable(); updateTotals(); })();
+</script>
+</body>
+</html>
