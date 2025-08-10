@@ -1,259 +1,594 @@
 <!DOCTYPE html>
 <html lang="hr">
 <head>
-<meta charset="utf-8">
-<title>Pregled e-Pratećih dokumenata (ePD)</title>
+<meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AGRONET • Pregled ePD-ova (Korisnik)</title>
 <style>
 :root{
-  /* Agronet-ish palette */
-  --bg:#f6f9f5; --card:#ffffff; --ink:#203229; --muted:#58655e;
-  --accent:#4da657; --accent-2:#2f7d32; --border:#e3e9e5;
-  --shadow:0 10px 28px rgba(32,50,41,.08); --radius:14px;
+  --bg:#f6f9f5; --card:#ffffff; --ink:#203229; --muted:#5e6b63;
+  --accent:#4da657; --accent-2:#2f7d32; --accent-3:#0b5f8a;
+  --border:#e3e9e5; --shadow:0 12px 28px rgba(32,50,41,.08); --radius:14px;
+  --danger:#b00020;
 }
 *{box-sizing:border-box}
-body{margin:0; font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; color:var(--ink); background:var(--bg)}
-.wrap{max-width:1180px; margin:auto; padding:24px}
-h1{margin:0 0 14px; color:var(--accent-2); font-size:28px}
-
-/* Sticky filter bar */
-.sticky{position:sticky; top:0; z-index:50; background:linear-gradient(180deg,var(--bg),#fff); padding:12px 0 14px; border-bottom:1px solid var(--border)}
-.filters{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
-.field{display:flex; align-items:center; background:#fff; border:1px solid var(--border); border-radius:12px; padding:9px 12px; box-shadow:var(--shadow)}
-select,input{border:0; outline:0; background:transparent; color:var(--ink); font-size:15px}
-.btn{appearance:none; border-radius:12px; padding:10px 14px; font-weight:600; cursor:pointer; border:1px solid var(--border); background:#fff; color:#41504a}
-.btn-primary{background:linear-gradient(180deg,var(--accent),#3b9145); color:#fff; border:1px solid #3b914555}
-.btn:disabled{opacity:.6; cursor:not-allowed}
-.hint{font-size:12px; color:var(--muted)}
-
-/* Tabs */
-.tabs{display:flex; gap:8px; margin-top:14px}
-.tab{border:1px solid var(--border); background:#fff; padding:8px 12px; border-radius:999px; cursor:pointer; font-weight:600; color:#41504a}
-.tab.active{background:linear-gradient(180deg,#e9f7ee,#fff); border-color:#cde7d2; color:#1f5f33}
-
-/* Cards & tables */
-.card{margin-top:12px; background:#fff; border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow)}
-.card-header{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px 16px; border-bottom:1px dashed var(--border)}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+.wrap{max-width:1200px;margin:auto;padding:24px}
+h1{margin:0 0 6px;font-size:28px;color:var(--accent-2)}
+h2{margin:0;font-size:18px}
+.hint{font-size:12px;color:var(--muted)}
+/* buttons */
+.btn{appearance:none;border:1px solid var(--border);background:#fff;color:#33433b;
+  border-radius:12px;padding:10px 14px;font-weight:600;cursor:pointer}
+.btn-primary{background:linear-gradient(180deg,var(--accent),#3a8f44);color:#fff;border-color:#3a8f4433}
+.btn-danger{background:linear-gradient(180deg,#c84b4b,#b00020);color:#fff;border-color:#b0002033}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+/* cards & tables */
+.card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);margin-top:14px}
+.card-header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px dashed var(--border)}
 .card-body{padding:16px}
-
-table{width:100%; border-collapse:separate; border-spacing:0; overflow:hidden; border-radius:12px; border:1px solid var(--border)}
-th,td{padding:10px 12px; text-align:left}
-thead th{background:linear-gradient(180deg,rgba(47,125,50,.08),transparent); border-bottom:1px solid var(--border); white-space:nowrap}
+.table-wrap{overflow:auto}
+table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--border);border-radius:12px;background:#fff}
+th,td{padding:10px 12px;text-align:left;vertical-align:top}
+thead th{background:linear-gradient(180deg,rgba(47,125,50,.08),transparent);border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;top:0}
 tbody tr+tr td{border-top:1px dashed var(--border)}
-tbody tr{background:#fff}
 tbody tr:hover{background:#f3f8f4}
-
-/* Status badges */
-.badge{display:inline-block; padding:.18rem .5rem; border-radius:999px; border:1px solid var(--border); font-size:12px; white-space:nowrap}
-.b-aktivan{background:#fff}
-.b-sender{background:#eaf6ff; color:#0b5f8a; border-color:#bfe4ff}
-.b-finish{background:#e9f7ee; color:#1e6d3a; border-color:#c8ebd3}
-.b-storno{background:#fdeaea; color:#9b1f1f; border-color:#f4c4c4}
-
-/* Pagination */
-.pager{display:flex; justify-content:center; padding:10px 0}
-.link{color:#0b5f8a; text-decoration:none}
-.link:hover{text-decoration:underline}
+.badge{display:inline-block;padding:.18rem .5rem;border-radius:999px;border:1px solid var(--border);font-size:12px}
+.st-akt{background:#fff}
+.st-potp{background:#e6f2ff;border-color:#cfe5ff;color:#0b5f8a}
+.st-zav{background:#e9f7ee;border-color:#c8ebd3;color:#1e6d3a}
+.st-sto{background:#fdecea;border-color:#f7c5bf;color:#b00020}
+/* role toggle */
+.role-toggle{display:flex;gap:8px;align-items:center}
+.role-toggle .btn{padding:8px 12px}
+.role-toggle .btn.active{background:linear-gradient(180deg,var(--accent-3),#09496a); color:#fff; border-color:#09496a}
+/* modal */
+.modal{position:fixed;inset:0;display:none;background:rgba(0,0,0,.35);z-index:50;padding:24px}
+.modal.open{display:block}
+.sheet{height:100%;max-width:1100px;margin:auto;background:#fff;border:1px solid var(--border);
+  border-radius:16px;box-shadow:0 18px 40px rgba(0,0,0,.25);display:flex;flex-direction:column}
+.sheet-header{padding:14px 16px;border-bottom:1px dashed var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.sheet-body{padding:0;display:flex;min-height:0;height:100%}
+.details-left{flex: 0 0 340px;border-right:1px dashed var(--border);padding:14px 16px;overflow:auto}
+.details-right{flex:1;display:flex;flex-direction:column}
+.kvp{display:grid;grid-template-columns: 135px 1fr;gap:6px 10px;font-size:14px;margin-top:8px}
+.kvp div:nth-child(odd){color:var(--muted)}
+hr.sep{border:0;border-top:1px dashed var(--border);margin:12px 0}
+.section{padding:12px;border-bottom:1px dashed var(--border)}
+.section h3{margin:0 0 8px;font-size:16px;color:var(--accent-2)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+input[type="text"], input[type="number"], select, textarea{
+  border:1px solid var(--border);background:#fff;padding:10px 12px;border-radius:12px}
+label{font-size:12px;color:var(--muted);display:block;margin:0 0 6px}
+.file-pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border:1px dashed var(--border);border-radius:999px;margin:4px 6px 0 0}
+.note{padding:10px;border:1px dashed var(--border);border-radius:10px;background:#fffef5}
+small{color:var(--muted)}
+@media print{
+  body{background:#fff}
+  .modal{position:static;display:block;background:#fff;padding:0}
+  .sheet{max-width:none;border:none;box-shadow:none}
+  .role-toggle,.btn{display:none !important}
+}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>Pregled e-Pratećih dokumenata</h1>
+  <h1>Pregled ePD-ova (Korisnik)</h1>
+  <div class="hint">FS 3.10 (pregled) i 3.9 (radnje na pojedinačnom ePD-u). Klik na MVV otvara detalje.</div>
 
-  <!-- Sticky filter bar -->
-  <div class="sticky">
-    <div class="filters">
-      <div class="field">
-        <select id="fWineYear" aria-label="Odaberite vinsku godinu">
-          <option value="">Vinska godina (sve)</option>
-          <option>2023/2024</option>
-          <option selected>2024/2025</option>
-          <option>2025/2026</option>
-        </select>
-      </div>
-      <div class="field">
-        <select id="fCreatedYear" aria-label="Godina kreiranja ePD-a">
-          <option value="">Godina kreiranja (sve)</option>
-          <option>2024</option>
-          <option selected>2025</option>
-          <option>2026</option>
-        </select>
-      </div>
-      <div class="field">
-        <input id="fSearch" placeholder="Pretraži po MVV / primatelju / pošiljatelju" />
-      </div>
-      <button class="btn" id="btnReset">Poništi filtere</button>
-      <div style="flex:1"></div>
-      <button class="btn-primary" id="btnNew">Kreiraj novi ePD</button>
-    </div>
+  <!-- Uloga -->
+  <div class="role-toggle" style="margin-top:10px">
+    <strong>Prikaz:</strong>
+    <button class="btn active" id="btnRoleSender">Pošiljatelj</button>
+    <button class="btn" id="btnRoleReceiver">Primatelj</button>
   </div>
 
-  <!-- Tabs -->
-  <div class="tabs">
-    <button class="tab active" data-tab="sender">Pošiljatelj</button>
-    <button class="tab" data-tab="receiver">Primatelj</button>
-  </div>
-
-  <!-- Sender table -->
-  <div class="card" id="card-sender">
+  <!-- Tablica Pošiljatelj -->
+  <div class="card" id="cardSender" style="margin-top:14px">
     <div class="card-header">
-      <div><b>Pošiljatelj</b></div>
-      <div class="hint">Klik na MVV otvara detalje ePD-a.</div>
+      <h2>Pošiljatelj</h2>
+      <span class="hint">Akcije: Uredi, Ispiši, Učitaj/Preuzmi Zapisnik, Učitaj/Preuzmi ePD, Storniraj, Elektronički potpiši, Završi ePD.</span>
     </div>
-    <div class="card-body">
-      <table id="tbl-sender">
+    <div class="card-body table-wrap">
+      <table id="tblSender">
         <thead>
           <tr>
-            <th>Ref. broj (MVV)</th>
-            <th>Vrsta robe</th>
-            <th>Kategorija / Sorta</th>
-            <th>Dodatni podaci</th>
-            <th>Količina</th>
-            <th>Datum kreiranja</th>
-            <th>Status</th>
+            <th>MVV</th><th>Vrsta robe</th><th>Kategorija / Sorta</th><th>Dodatni podaci</th>
+            <th>Količina</th><th>Datum i vrijeme kreiranja</th><th>Status</th>
           </tr>
         </thead>
         <tbody></tbody>
       </table>
-      <div class="pager"><button class="btn" id="more-sender">Prikaži još</button></div>
+      <div class="hint" id="emptySender" style="margin-top:8px"></div>
     </div>
   </div>
 
-  <!-- Receiver table -->
-  <div class="card" id="card-receiver" style="display:none">
+  <!-- Tablica Primatelj -->
+  <div class="card" id="cardReceiver" style="display:none;margin-top:14px">
     <div class="card-header">
-      <div><b>Primatelj</b></div>
-      <div class="hint">Klik na MVV otvara detalje ePD-a.</div>
+      <h2>Primatelj</h2>
+      <span class="hint">Akcije: Ispiši, Preuzmi Zapisnik/ePD (ako postoje), Elektronički potpiši.</span>
     </div>
-    <div class="card-body">
-      <table id="tbl-receiver">
+    <div class="card-body table-wrap">
+      <table id="tblReceiver">
         <thead>
           <tr>
-            <th>Ref. broj (MVV)</th>
-            <th>Vrsta robe</th>
-            <th>Kategorija / Sorta</th>
-            <th>Dodatni podaci</th>
-            <th>Količina</th>
-            <th>Datum kreiranja</th>
-            <th>Status</th>
+            <th>MVV</th><th>Vrsta robe</th><th>Kategorija / Sorta</th><th>Dodatni podaci</th>
+            <th>Količina</th><th>Datum i vrijeme kreiranja</th><th>Status</th>
           </tr>
         </thead>
         <tbody></tbody>
       </table>
-      <div class="pager"><button class="btn" id="more-receiver">Prikaži još</button></div>
+      <div class="hint" id="emptyReceiver" style="margin-top:8px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Detalji ePD-a (akcije po ulozi) -->
+<div class="modal" id="dlg">
+  <div class="sheet">
+    <div class="sheet-header">
+      <div>
+        <div style="font-weight:700">ePD – <span id="dMVV"></span> <span id="dStatus" class="badge"></span></div>
+        <div class="hint">Vinska godina: <span id="dWineYear"></span> • Kreiran: <span id="dCreated"></span></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" id="btnPrint">Ispiši</button>
+        <!-- Pošiljatelj -->
+        <button class="btn" id="btnEdit" title="Uredi dostavne podatke (pošiljatelj)">Uredi</button>
+        <button class="btn" id="btnUploadZapisnik">Učitaj Zapisnik</button>
+        <button class="btn" id="btnDownloadZapisnik">Preuzmi Zapisnik</button>
+        <button class="btn" id="btnUploadEPD">Učitaj ePD</button>
+        <button class="btn" id="btnDownloadEPD">Preuzmi ePD</button>
+        <button class="btn btn-danger" id="btnStorno">Storniraj</button>
+        <!-- Obje uloge -->
+        <button class="btn btn-primary" id="btnESign">Elektronički potpiši</button>
+        <button class="btn btn-primary" id="btnFinish">Završi ePD</button>
+        <button class="btn" id="btnClose">Zatvori ✕</button>
+      </div>
+    </div>
+
+    <div class="sheet-body">
+      <aside class="details-left">
+        <div class="section">
+          <h3>Sažetak</h3>
+          <div class="kvp">
+            <div>Pošiljatelj</div><div id="iSender"></div>
+            <div>Primatelj</div><div id="iReceiver"></div>
+            <div>Mjesto otpreme</div><div id="iFrom"></div>
+            <div>Mjesto prijema</div><div id="iTo"></div>
+            <div>Prijevoznik</div><div id="iCarrier"></div>
+            <div>Vozilo</div><div id="iVehicle"></div>
+          </div>
+        </div>
+        <div class="section">
+          <h3>Popis robe</h3>
+          <div id="iItems"></div>
+        </div>
+        <div class="section">
+          <h3>Dokumenti</h3>
+          <div id="iDocs"></div>
+        </div>
+      </aside>
+
+      <section class="details-right" style="overflow:auto">
+        <!-- Uredi (pošiljatelj) -->
+        <div class="section" id="secEdit" style="display:none">
+          <h3>Uredi dostavne podatke</h3>
+          <div class="row">
+            <div>
+              <label>Mjesto prijema</label>
+              <input id="fShipTo" type="text" />
+            </div>
+            <div>
+              <label>Prijevoznik – OIB</label>
+              <input id="fCarOIB" type="text" />
+            </div>
+            <div>
+              <label>Prijevoznik – Naziv</label>
+              <input id="fCarName" type="text" />
+            </div>
+            <div>
+              <label>Prijevoznik – Adresa</label>
+              <input id="fCarAddr" type="text" />
+            </div>
+            <div style="min-width:340px">
+              <label>Vrsta prijevoza i registracijski broj</label>
+              <input id="fVehicle" type="text" />
+            </div>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <button class="btn btn-primary" id="btnSaveEdit">Spremi</button>
+            <button class="btn" id="btnCancelEdit">Odustani</button>
+            <span class="hint">Obavezna polja moraju biti popunjena (FS 3.9.5 / 3.9.3 PP0023).</span>
+          </div>
+        </div>
+
+        <!-- Zapisnik (pošiljatelj) -->
+        <div class="section" id="secZapisnik" style="display:none">
+          <h3>Zapisnik o neprodanim količinama</h3>
+          <div class="hint" style="margin-bottom:6px">Unesite povrat za odabrane stavke. Vrijedi: &gt;0 i ≤ otpremljeno (FS 3.9.5).</div>
+          <div id="retTable"></div>
+          <div class="row" style="margin-top:10px">
+            <input type="file" id="retFile" accept="application/pdf" />
+            <button class="btn" id="btnUploadRet">Učitaj scan Zapisnika (.pdf)</button>
+            <span class="hint">Format mora biti .pdf</span>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <button class="btn btn-primary" id="btnSaveRet">Spremi</button>
+            <button class="btn" id="btnCancelRet">Odustani</button>
+          </div>
+          <div id="retInfo" class="hint" style="margin-top:8px"></div>
+        </div>
+
+        <!-- Storno (pošiljatelj) -->
+        <div class="section" id="secStorno" style="display:none">
+          <h3>Storniranje ePD-a</h3>
+          <label>Napomena uz storno (obavezno)</label>
+          <textarea id="stornoText" rows="3" style="width:100%"></textarea>
+          <div class="row" style="margin-top:10px">
+            <button class="btn btn-danger" id="stornoApply">Storniraj</button>
+            <button class="btn" id="stornoCancel">Odustani</button>
+          </div>
+          <small class="hint">Nakon storna ePD je zaključan; kod grožđa se količine vraćaju na dostupne (simulacija). (FS 3.9 Scenarij 4, PP0020–PP0022)</small>
+        </div>
+
+        <!-- Poruke -->
+        <div class="section note" id="secMsg" style="display:none"></div>
+      </section>
     </div>
   </div>
 </div>
 
 <script>
-/* ======= Demo dataset (zamijeni API-jem) ======= */
-const dataset = [
-  // role: 'sender' or 'receiver'
-  {id:'1', role:'sender',  mvv:'1/2025', vg:'2024/2025', created:'12.1.2025. 09:12', status:'Završen',
-   vrsta:'Pretpakovine (≥ 2 l)', kat:'Vino', info:'BV073 / Graševina', kolicina:'50 l'},
-  {id:'2', role:'sender',  mvv:'2/2025', vg:'2024/2025', created:'15.2.2025. 11:47', status:'Storniran',
-   vrsta:'Pretpakovine (≥ 2 l)', kat:'Vino', info:'BV073 / Graševina', kolicina:'35 l'},
-  {id:'3', role:'sender',  mvv:'3/2025', vg:'2024/2025', created:'25.2.2025. 15:21', status:'Elektronički potpisan (pošiljatelj)',
-   vrsta:'Vinski proizvod (rinfuza)', kat:'Vino', info:'Crno', kolicina:'30 hl'},
-  {id:'4', role:'sender',  mvv:'4/2025', vg:'2025/2026', created:'10.5.2025. 13:25', status:'Aktivan',
-   vrsta:'Grožđe', kat:'Graševina', info:'bijelo', kolicina:'12 t'},
-
-  {id:'5', role:'receiver', mvv:'1/2025', vg:'2024/2025', created:'12.1.2025. 09:12', status:'Završen',
-   vrsta:'Pretpakovine (≥ 2 l)', kat:'Vino', info:'BV073 / Graševina', kolicina:'50 l'},
-  {id:'6', role:'receiver', mvv:'6/2025', vg:'2024/2025', created:'25.4.2025. 07:03', status:'Aktivan',
-   vrsta:'Pretpakovine (≥ 2 l)', kat:'Vino', info:'BV073 / Graševina', kolicina:'22 l'}
+/* ===== Dummy podaci – korisnički pregled ===== */
+const DATA = [
+  {
+    id:crypto.randomUUID(), mvv:"12/2025",
+    createdAt:new Date(2025,3,17,10,42),
+    wineYear:"2025 (01.08.2025–31.07.2026)",
+    status:"Aktivan",
+    sender:{oib:"12345678901",name:"Vinarija Primjer d.o.o.",addr:"Ulica 1, Grad"},
+    receiver:{oib:"10987654321",name:"Distributer d.o.o.",addr:"Adresa 2, Grad"},
+    shipFrom:"Skladište A", shipTo:"Pogon B",
+    carrier:{oib:"00011122233",name:"Transport d.o.o.",addr:"Adresa 3, Grad"},
+    vehicle:"Kamion ZG-123-AB",
+    items:[
+      {type:"Grožđe", category:"—", extra:"Graševina", qty:"12.0 t", sentNum:12.0, unit:"t"},
+      {type:"Vinski proizvod (rinfuza)", category:"vino", extra:"bijelo", qty:"80 hl", sentNum:80, unit:"hl"}
+    ],
+    docs:{epdPdf:false, zapisnikPdf:false},
+    eSign:{sender:false, receiver:false},
+    stornoNote:""
+  },
+  {
+    id:crypto.randomUUID(), mvv:"7/2025",
+    createdAt:new Date(2025,0,29,9,5),
+    wineYear:"2024 (01.08.2024–31.07.2025)",
+    status:"Elektronički potpisan (pošiljatelj)",
+    sender:{oib:"11122233344",name:"OPG Kovač",addr:"Vinogradska 10, Kutjevo"},
+    receiver:{oib:"22233344455",name:"Vinar d.o.o.",addr:"Podrum 1, Požega"},
+    shipFrom:"Vinograd – parcela 3", shipTo:"Podrum 1",
+    carrier:{oib:"",name:"Interni prijevoz",addr:""},
+    vehicle:"Prikolica KO-234",
+    items:[{type:"Grožđe",category:"—",extra:"Frankovka",qty:"8.5 t", sentNum:8.5, unit:"t"}],
+    docs:{epdPdf:false, zapisnikPdf:false},
+    eSign:{sender:true, receiver:false},
+    stornoNote:""
+  },
+  {
+    id:crypto.randomUUID(), mvv:"3/2024",
+    createdAt:new Date(2024,10,2,14,20),
+    wineYear:"2024 (01.08.2024–31.07.2025)",
+    status:"Završen",
+    sender:{oib:"55544433322",name:"Vinarija Aurora d.d.",addr:"Starogradska 8, Poreč"},
+    receiver:{oib:"33322211100",name:"HoReCa Trade",addr:"Zagrebačka 25, Zagreb"},
+    shipFrom:"Tank 5", shipTo:"Skladište Jankomir",
+    carrier:{oib:"12312312312",name:"Logistika Plus",addr:"Terminal 2, Zagreb"},
+    vehicle:"Cisterna ZG-777-YY",
+    items:[{type:"Vinski proizvod (rinfuza)",category:"pjenušavo vino",extra:"roze",qty:"120 hl", sentNum:120, unit:"hl"}],
+    docs:{epdPdf:true, zapisnikPdf:false},
+    eSign:{sender:true, receiver:true},
+    stornoNote:""
+  },
+  {
+    id:crypto.randomUUID(), mvv:"22/2023",
+    createdAt:new Date(2023,8,10,8,0),
+    wineYear:"2023 (01.08.2023–31.07.2024)",
+    status:"Storniran",
+    sender:{oib:"88877766655",name:"OPG Barišić",addr:"Vinske Poljane 4, Đakovo"},
+    receiver:{oib:"44433322211",name:"Butik Vina",addr:"Gundulićeva 11, Osijek"},
+    shipFrom:"Skladište OPG", shipTo:"Prodajno mjesto",
+    carrier:{oib:"",name:"Samodostava",addr:""},
+    vehicle:"Kombi OS-321-AA",
+    items:[
+      {type:"Pretpakovine", category:"vino", extra:"bijelo", qty:"250 l", sentNum:250, unit:"l"},
+      {type:"Vinski ocat", category:"vinski ocat", extra:"—", qty:"10 hl", sentNum:10, unit:"hl"}
+    ],
+    docs:{epdPdf:true, zapisnikPdf:true},
+    eSign:{sender:false, receiver:false},
+    stornoNote:"Pogrešno uneseni dostavni podaci."
+  }
 ];
 
-/* ======= Helpers ======= */
-const $ = s => document.querySelector(s);
-const tbodySender = $('#tbl-sender tbody');
-const tbodyReceiver = $('#tbl-receiver tbody');
-
-function badge(status){
-  const cls = status==='Aktivan' ? 'b-aktivan'
-            : status==='Elektronički potpisan (pošiljatelj)' ? 'b-sender'
-            : status==='Završen' ? 'b-finish' : 'b-storno';
-  return `<span class="badge ${cls}">${status}</span>`;
+/* ===== Helpers ===== */
+const $ = s=>document.querySelector(s);
+const $$ = s=>document.querySelectorAll(s);
+function fmtDT(d){ return new Intl.DateTimeFormat('hr-HR',{dateStyle:'short',timeStyle:'short'}).format(d); }
+function statusBadge(st){
+  let cls='st-akt'; if(st.startsWith('Elektronički')) cls='st-potp'; else if(st==='Završen') cls='st-zav'; else if(st==='Storniran') cls='st-sto';
+  return `<span class="badge ${cls}">${st}</span>`;
 }
 
-function rowHTML(r){
-  return `<tr>
-    <td><a class="link" href="#" data-id="${r.id}" title="Otvori detalje">${r.mvv}</a></td>
-    <td>${r.vrsta}</td>
-    <td>${r.kat||'—'}</td>
-    <td>${r.info||'—'}</td>
-    <td>${r.kolicina}</td>
-    <td>${r.created}</td>
-    <td>${badge(r.status)}</td>
-  </tr>`;
-}
-
-/* ======= Filtering & rendering ======= */
-let pageSender=1, pageReceiver=1, PAGE=10;
-
-function applyFilters(){
-  const fy = $('#fCreatedYear').value;
-  const fvg = $('#fWineYear').value;
-  const q = ($('#fSearch').value||'').toLowerCase();
-
-  const pass = r =>
-    (!fy || (r.created||'').includes(fy)) &&
-    (!fvg || r.vg===fvg) &&
-    (!q || [r.mvv,r.kat,r.info].join(' ').toLowerCase().includes(q));
-
-  const senders = dataset.filter(r=>r.role==='sender' && pass(r));
-  const receivers = dataset.filter(r=>r.role==='receiver' && pass(r));
-
-  // reset pages
-  pageSender=1; pageReceiver=1;
-
-  renderTable(tbodySender, senders.slice(0,PAGE));
-  renderTable(tbodyReceiver, receivers.slice(0,PAGE));
-
-  $('#more-sender').onclick = ()=> { pageSender++; renderTable(tbodySender, senders.slice(0, PAGE*pageSender)); };
-  $('#more-receiver').onclick = ()=> { pageReceiver++; renderTable(tbodyReceiver, receivers.slice(0, PAGE*pageReceiver)); };
-}
-function renderTable(tbody, rows){
-  tbody.innerHTML = rows.map(rowHTML).join('') || `<tr><td colspan="7" class="hint">Nema podataka za odabrane filtere.</td></tr>`;
-}
-
-/* ======= Tabs ======= */
-document.querySelectorAll('.tab').forEach(t=>{
-  t.addEventListener('click', ()=>{
-    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-    t.classList.add('active');
-    const tab = t.getAttribute('data-tab');
-    $('#card-sender').style.display = tab==='sender' ? 'block' : 'none';
-    $('#card-receiver').style.display = tab==='receiver' ? 'block' : 'none';
-  });
-});
-
-/* ======= Actions ======= */
-$('#btnReset').onclick = ()=>{
-  $('#fWineYear').value = '';
-  $('#fCreatedYear').value = '';
-  $('#fSearch').value = '';
-  applyFilters();
-};
-
-$('#btnNew').onclick = ()=>{
-  // promijeni prema tvojoj ruti (npr. /agronet/epd/novi)
-  alert('Otvorit će se forma za kreiranje novog ePD-a (zamijeni alert s navigacijom).');
-};
-
-document.body.addEventListener('click', (e)=>{
-  const a = e.target.closest('a[data-id]');
-  if(a){
-    e.preventDefault();
-    const id = a.getAttribute('data-id');
-    // ovdje navigiraj na "pojedinačni ePD" (operativni ekran) s ID-jem
-    // npr. window.location.href = `/agronet/epd/${id}`;
-    alert('Otvori detalje ePD-a ID=' + id + ' (zamijeni alert s navigacijom).');
+/* ===== Render tablica ===== */
+function renderTables(){
+  const sTB = $('#tblSender tbody'); const rTB = $('#tblReceiver tbody');
+  sTB.innerHTML=''; rTB.innerHTML='';
+  for(const r of DATA){
+    const it = r.items[0] || {};
+    const katSorta = it.type==='Grožđe' ? (it.extra||'') : (it.category||'');
+    const rowHTML = `
+      <td><a href="#" class="linkMVV" data-mvv="${r.mvv}">${r.mvv}</a></td>
+      <td>${it.type||''}</td>
+      <td>${katSorta}</td>
+      <td>${it.extra||''}</td>
+      <td>${it.qty||''}</td>
+      <td>${fmtDT(r.createdAt)}</td>
+      <td>${statusBadge(r.status)}</td>`;
+    const tr1 = document.createElement('tr'); tr1.innerHTML=rowHTML; sTB.appendChild(tr1);
+    const tr2 = document.createElement('tr'); tr2.innerHTML=rowHTML; rTB.appendChild(tr2);
   }
-});
+  $$('.linkMVV').forEach(a=>a.onclick=(e)=>{e.preventDefault(); openDetails(a.getAttribute('data-mvv'));});
+}
+renderTables();
 
-/* ======= Init ======= */
-applyFilters();
+/* ===== Role toggle ===== */
+let ROLE='sender';
+$('#btnRoleSender').onclick=()=>{ ROLE='sender'; $('#btnRoleSender').classList.add('active'); $('#btnRoleReceiver').classList.remove('active'); $('#cardSender').style.display=''; $('#cardReceiver').style.display='none'; };
+$('#btnRoleReceiver').onclick=()=>{ ROLE='receiver'; $('#btnRoleReceiver').classList.add('active'); $('#btnRoleSender').classList.remove('active'); $('#cardSender').style.display='none'; $('#cardReceiver').style.display=''; };
+
+/* ===== Modal / Detalji ===== */
+let CUR=null;
+function openDetails(mvv){
+  CUR = DATA.find(x=>x.mvv===mvv); if(!CUR) return;
+  $('#dMVV').textContent = CUR.mvv;
+  $('#dStatus').outerHTML = statusBadge(CUR.status).replace('<span','<span id="dStatus"');
+  $('#dWineYear').textContent = CUR.wineYear;
+  $('#dCreated').textContent = fmtDT(CUR.createdAt);
+
+  $('#iSender').textContent = `${CUR.sender.name} (${CUR.sender.oib})`;
+  $('#iReceiver').textContent = `${CUR.receiver.name} (${CUR.receiver.oib})`;
+  $('#iFrom').textContent = CUR.shipFrom;
+  $('#iTo').textContent = CUR.shipTo;
+  $('#iCarrier').textContent = `${CUR.carrier.name||'—'} ${CUR.carrier.oib? '('+CUR.carrier.oib+')':''}`;
+  $('#iVehicle').textContent = CUR.vehicle || '—';
+
+  const itemsHost = $('#iItems'); itemsHost.innerHTML='';
+  CUR.items.forEach(it=>{
+    const pill = document.createElement('div'); pill.className='file-pill';
+    pill.textContent = `${it.type} • ${it.category} • ${it.extra} • ${it.qty}`;
+    itemsHost.appendChild(pill);
+  });
+
+  const docsHost = $('#iDocs'); docsHost.innerHTML='';
+  const epd = document.createElement('div'); epd.className='file-pill';
+  epd.textContent = `e-Prateći dokument ${CUR.docs.epdPdf?'(učitan)':'(nema)'}`;
+  const zap = document.createElement('div'); zap.className='file-pill';
+  zap.textContent = `Zapisnik o neprodanim količinama ${CUR.docs.zapisnikPdf?'(učitan)':'(nema)'}`;
+  docsHost.appendChild(epd); docsHost.appendChild(zap);
+
+  // Vidljivost gumbi prema ulozi
+  const senderOnly = ['btnEdit','btnUploadZapisnik','btnDownloadZapisnik','btnUploadEPD','btnDownloadEPD','btnStorno'];
+  senderOnly.forEach(id=>$('#'+id).style.display = (ROLE==='sender') ? '' : 'none');
+
+  // Enable/disable po statusu
+  updateButtonsState();
+
+  // zatvori sekcije
+  hideAllSections();
+  $('#dlg').classList.add('open');
+}
+function closeDetails(){ $('#dlg').classList.remove('open'); CUR=null; }
+$('#btnClose').onclick = closeDetails;
+
+/* ===== Sekcije prikaz ===== */
+function hideAllSections(){
+  ['secEdit','secZapisnik','secStorno','secMsg'].forEach(id=>$('#'+id).style.display='none');
+}
+function showMsg(text){ const s=$('#secMsg'); s.textContent=text; s.style.display='block'; }
+
+/* ===== Gumbi u modalu ===== */
+$('#btnPrint').onclick = ()=> window.print();
+
+/* Uredi (pošiljatelj) */
+$('#btnEdit').onclick = ()=>{
+  if(!CUR) return;
+  hideAllSections();
+  $('#fShipTo').value = CUR.shipTo||'';
+  $('#fCarOIB').value = CUR.carrier.oib||'';
+  $('#fCarName').value = CUR.carrier.name||'';
+  $('#fCarAddr').value = CUR.carrier.addr||'';
+  $('#fVehicle').value = CUR.vehicle||'';
+  $('#secEdit').style.display='';
+};
+$('#btnCancelEdit').onclick = ()=> hideAllSections();
+$('#btnSaveEdit').onclick = ()=>{
+  // validacije obaveznih polja iz FS (3.9.5 / 3.9.3 PP0023)
+  const must = [['fShipTo','Mjesto prijema'],['fCarName','Prijevoznik – Naziv'],['fCarAddr','Prijevoznik – Adresa'],['fVehicle','Vrsta prijevoza i registracija']];
+  for(const [id,label] of must){
+    if(!$('#'+id).value.trim()){ alert(`Obavezan podatak: ${label}.`); return; }
+  }
+  CUR.shipTo = $('#fShipTo').value.trim();
+  CUR.carrier = {oib:$('#fCarOIB').value.trim(), name:$('#fCarName').value.trim(), addr:$('#fCarAddr').value.trim()};
+  CUR.vehicle = $('#fVehicle').value.trim();
+  // refresh sažetak
+  $('#iTo').textContent = CUR.shipTo;
+  $('#iCarrier').textContent = `${CUR.carrier.name} ${CUR.carrier.oib? '('+CUR.carrier.oib+')':''}`;
+  $('#iVehicle').textContent = CUR.vehicle;
+  hideAllSections(); showMsg('Promjene su spremljene.');
+};
+
+/* Učitaj/Spremi Zapisnik (pošiljatelj) */
+let RET_ROWS = []; let RET_FILE_OK = false;
+$('#btnUploadZapisnik').onclick = ()=>{
+  if(!CUR) return;
+  hideAllSections();
+  RET_ROWS = CUR.items.map((it,i)=>({idx:i, type:it.type, category:it.category, extra:it.extra, sent:it.sentNum, unit:it.unit, back:0}));
+  RET_FILE_OK = false;
+  renderRetTable();
+  $('#retInfo').textContent='';
+  $('#secZapisnik').style.display='';
+};
+function renderRetTable(){
+  const host = $('#retTable'); host.innerHTML='';
+  const tbl = document.createElement('table'); tbl.innerHTML = `
+    <thead><tr><th>Vrsta robe</th><th>Kategorija</th><th>Dodatni</th><th>Otpremljeno</th><th>Povrat (unos)</th></tr></thead>
+    <tbody></tbody>`;
+  const tb = tbl.querySelector('tbody');
+  RET_ROWS.forEach(row=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${row.type}</td><td>${row.category}</td><td>${row.extra}</td>
+      <td>${row.sent} ${row.unit}</td>
+      <td><input type="number" step="0.01" min="0" value="${row.back}" data-idx="${row.idx}" style="width:120px" /></td>`;
+    tb.appendChild(tr);
+  });
+  host.appendChild(tbl);
+  tb.querySelectorAll('input[type="number"]').forEach(inp=>{
+    inp.oninput = ()=> {
+      const ix = Number(inp.getAttribute('data-idx'));
+      const val = Number(inp.value);
+      const r = RET_ROWS.find(x=>x.idx===ix); if(!r) return;
+      r.back = val;
+    };
+  });
+}
+$('#btnUploadRet').onclick = ()=>{
+  const f = $('#retFile').files[0];
+  if(!f){ alert('Odaberite .pdf datoteku Zapisnika.'); return; }
+  if(!f.name.toLowerCase().endsWith('.pdf')){ alert('Moguće je učitati samo .pdf datoteke. Molimo učitajte Zapisnik u .pdf formatu.'); return; }
+  RET_FILE_OK = true;
+  $('#retInfo').textContent = `Učitana datoteka: ${f.name}`;
+};
+$('#btnSaveRet').onclick = ()=>{
+  // validacija količina (FS 3.9.5)
+  for(const r of RET_ROWS){
+    if(r.back>0 && r.back<=r.sent) continue;
+    if(r.back===0) continue; // dopuštamo prazno ako nije označeno
+    alert('Unesena količina mora biti veća od 0 i jednaka ili manja količini koja se prevozi.');
+    return;
+  }
+  if(!RET_FILE_OK){ alert('Prije spremanja učitajte scan Zapisnika u .pdf formatu.'); return; }
+  CUR.docs.zapisnikPdf = true;
+  hideAllSections(); showMsg('Zapisnik je spremljen i učitan (.pdf).');
+};
+$('#btnCancelRet').onclick = ()=> hideAllSections();
+
+/* Preuzimanja dokumenata (po obje uloge ali ovisi o postojanju) */
+$('#btnDownloadZapisnik').onclick = ()=>{
+  if(!CUR?.docs.zapisnikPdf) { alert('Nema učitanog Zapisnika.'); return; }
+  downloadDummy(`Zapisnik_${CUR.mvv.replace('/','_')}.pdf`, 'PDF Zapisnik (demo)');
+};
+$('#btnDownloadEPD').onclick = ()=>{
+  if(!CUR?.docs.epdPdf) { alert('Nema učitanog ePD-a.'); return; }
+  downloadDummy(`ePD_${CUR.mvv.replace('/','_')}.pdf`, 'PDF ePD (demo)');
+};
+
+/* Učitavanje ePD (.pdf) – ručni potpis (pošiljatelj) */
+$('#btnUploadEPD').onclick = ()=>{
+  const input = document.createElement('input');
+  input.type='file'; input.accept='application/pdf';
+  input.onchange = ()=>{
+    const f = input.files[0];
+    if(!f){ return; }
+    if(!f.name.toLowerCase().endsWith('.pdf')){ alert('Moguće je učitati samo .pdf datoteke. Molimo učitajte ePD u .pdf formatu.'); return; }
+    CUR.docs.epdPdf = true;
+    showMsg(`Učitan ePD (.pdf): ${f.name}`);
+    updateButtonsState();
+  };
+  input.click();
+};
+
+/* Storno (pošiljatelj) */
+$('#btnStorno').onclick = ()=>{ hideAllSections(); $('#stornoText').value=''; $('#secStorno').style.display=''; };
+$('#stornoCancel').onclick = ()=> hideAllSections();
+$('#stornoApply').onclick = ()=>{
+  const txt = $('#stornoText').value.trim();
+  if(!txt){ alert('Unesite napomenu uz storno.'); return; }
+  CUR.stornoNote = txt;
+  CUR.status = 'Storniran';
+  $('#dStatus').outerHTML = statusBadge(CUR.status).replace('<span','<span id="dStatus"');
+  updateButtonsState();
+  hideAllSections(); showMsg('ePD je storniran.');
+  renderTables();
+};
+
+/* Elektronički potpis (oba – ovisno o ulozi) */
+$('#btnESign').onclick = ()=>{
+  if(!CUR) return;
+  if(CUR.status==='Storniran'){ alert('Dokument je storniran.'); return; }
+  if(ROLE==='sender') CUR.eSign.sender = true;
+  else CUR.eSign.receiver = true;
+
+  // Ažuriraj status
+  if(CUR.eSign.sender && CUR.eSign.receiver){ CUR.status='Završen'; }
+  else if(CUR.eSign.sender && !CUR.eSign.receiver){ CUR.status='Elektronički potpisan (pošiljatelj)'; }
+  else if(!CUR.eSign.sender && CUR.eSign.receiver){ CUR.status='Elektronički potpisan (primatelj)'; } // za jasnoću
+  $('#dStatus').outerHTML = statusBadge(CUR.status).replace('<span','<span id="dStatus"');
+  showMsg(ROLE==='sender' ? 'Pošiljatelj je elektronički potpisao.' : 'Primatelj je elektronički potpisao.');
+  updateButtonsState(); renderTables();
+};
+
+/* Završi ePD (pravila) */
+$('#btnFinish').onclick = ()=>{
+  if(!CUR) return;
+  if(CUR.status==='Storniran'){ alert('Dokument je storniran.'); return; }
+  const bothESigned = CUR.eSign.sender && CUR.eSign.receiver;
+  if(bothESigned){
+    CUR.status='Završen';
+    $('#dStatus').outerHTML = statusBadge(CUR.status).replace('<span','<span id="dStatus"');
+    showMsg('ePD je završen (obostrani e-potpis).');
+    updateButtonsState(); renderTables(); return;
+  }
+  // Ako nije obostrano potpisano – dopušteno samo ako je učitan skenirani ePD (.pdf)
+  if(CUR.docs.epdPdf){
+    CUR.status='Završen';
+    $('#dStatus').outerHTML = statusBadge(CUR.status).replace('<span','<span id="dStatus"');
+    showMsg('ePD je završen (ručni potpis + skenirani ePD).');
+    updateButtonsState(); renderTables(); return;
+  }
+  alert('Za završetak je potreban obostrani e-potpis ili učitan skenirani ePD (.pdf).');
+};
+
+/* Download helper */
+function downloadDummy(name, content){
+  const blob=new Blob([content],{type:'application/pdf'}); const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=name; a.click(); URL.revokeObjectURL(a.href);
+}
+
+/* Stanje gumba prema ulozi/statusu */
+function updateButtonsState(){
+  if(!CUR) return;
+  const isSender = (ROLE==='sender');
+  const s = CUR.status;
+
+  // vidljivost
+  $('#btnEdit').disabled = !(isSender && (s==='Aktivan' || s==='Elektronički potpisan (pošiljatelj)' || s==='Elektronički potpisan'));
+  $('#btnUploadZapisnik').disabled = !(isSender && (s!=='Storniran' && s!=='Završen')); // dopušta i tijekom aktivnog procesa
+  $('#btnDownloadZapisnik').disabled = !CUR.docs.zapisnikPdf;
+  $('#btnUploadEPD').disabled = !(isSender && s!=='Storniran');
+  $('#btnDownloadEPD').disabled = !CUR.docs.epdPdf;
+  $('#btnStorno').disabled = !(isSender && (s==='Aktivan' || s.startsWith('Elektronički') || s==='Završen'));
+  $('#btnESign').disabled = (s==='Storniran' || s==='Završen'); // potpis nema smisla nakon završetka
+  // Finish: obostrani e-potpis ili skenirani ePD
+  const canFinish = (CUR.eSign.sender && CUR.eSign.receiver) || CUR.docs.epdPdf;
+  $('#btnFinish').disabled = (s==='Storniran' || s==='Završen' || !canFinish);
+}
+
+/* Close modal */
+$('#btnClose').onclick = closeDetails;
+
+/* Init */
 </script>
 </body>
 </html>
