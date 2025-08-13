@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="utf-8">
+<title>Pregled ePD + Detalji (FS 3.11)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+:root{
+  --bg:#f6f9f5; --card:#ffffff; --ink:#203229; --muted:#5e6b63;
+  --accent:#4da657; --accent-2:#2f7d32; --border:#e3e9e5;
+  --shadow:0 10px 28px rgba(32,50,41,.08); --radius:14px;
+}
+*{box-sizing:border-box}
+body{margin:0; font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; color:var(--ink); background:var(--bg)}
+.wrap{max-width:1240px; margin:auto; padding:24px}
+h1{margin:0 0 8px; color:var(--accent-2); font-size:26px}
+h2{margin:0; font-size:18px}
+.hint{font-size:12px; color:var(--muted)}
+
+/* Toolbar */
+.toolbar{position:sticky; top:0; z-index:30; background:linear-gradient(180deg,var(--bg),#fff); border-bottom:1px solid var(--border); padding:12px 0}
+.filters{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+.field{display:flex; align-items:center; background:#fff; border:1px solid var(--border); border-radius:12px; padding:9px 12px; box-shadow:var(--shadow)}
+select,input{border:0; outline:0; background:transparent; color:var(--ink); font-size:15px}
+.btn{appearance:none; border-radius:12px; padding:10px 14px; font-weight:600; cursor:pointer; border:1px solid var(--border); background:#fff; color:#41504a}
+.btn:disabled{opacity:.6; cursor:not-allowed}
+
+/* Cards */
+.card{background:#fff; border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); margin-top:14px}
+.card-header{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px 16px; border-bottom:1px dashed var(--border)}
+.card-body{padding:16px}
+
+/* Tables */
+table{width:100%; border-collapse:separate; border-spacing:0; border:1px solid var(--border); border-radius:12px}
+th,td{padding:10px 12px; text-align:left; vertical-align:top}
+thead th{background:linear-gradient(180deg,rgba(47,125,50,.08),transparent); border-bottom:1px solid var(--border); white-space:nowrap}
+tbody tr+tr td{border-top:1px dashed var(--border)}
+tbody tr:hover{background:#f3f8f4}
+.link{color:#0b5f8a; text-decoration:none}
+.link:hover{text-decoration:underline}
+
+/* Badges */
+.badge{display:inline-block; padding:.18rem .5rem; border-radius:999px; border:1px solid var(--border); font-size:12px}
+.b-aktivan{background:#fff}
+.b-sender{background:#eaf6ff; color:#0b5f8a; border-color:#bfe4ff}
+.b-finish{background:#e9f7ee; color:#1e6d3a; border-color:#c8ebd3}
+.b-storno{background:#fdeaea; color:#9b1f1f; border-color:#f4c4c4}
+
+/* Layout */
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+
+/* Modal (detalji) */
+.modal{position:fixed; inset:0; display:none; background:rgba(0,0,0,.35); z-index:50; padding:24px}
+.modal.open{display:block}
+.sheet{height:100%; max-width:1100px; margin:auto; background:#fff; border:1px solid var(--border); border-radius:16px; box-shadow:0 18px 40px rgba(0,0,0,.25); display:flex; flex-direction:column}
+.sheet-header{padding:14px 16px; border-bottom:1px dashed var(--border); display:flex; align-items:center; justify-content:space-between; gap:12px}
+.sheet-title{font-weight:700; color:var(--accent-2)}
+.sheet-body{padding:16px; overflow:auto}
+.kv{display:grid; grid-template-columns:240px 1fr; gap:6px}
+.section{margin:14px 0}
+.actions{display:flex; gap:8px; flex-wrap:wrap}
+.btn-primary{background:linear-gradient(180deg,var(--accent),#3b9145); color:#fff; border:1px solid #3b914555}
+.doc-link{display:flex; align-items:center; gap:8px; padding:6px 8px; border:1px dashed var(--border); border-radius:10px}
+.x{border:1px solid var(--border); border-radius:10px; background:#fff; padding:6px 10px; cursor:pointer}
+@media print{
+  body *{visibility:hidden}
+  .modal.open, .modal.open *{visibility:visible}
+  .modal{position:static; background:#fff; padding:0}
+  .sheet{box-shadow:none; border:none; height:auto}
+  .sheet-header .actions, .x{display:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Pregled ePD - djelatnik - prijedlog</h1>
+  <div class="hint">FS 3.11 (PSK004 + interakcije 3.11.4). Klik na <b>MVV</b> otvara detalje ePD-a. Lista je objedinjena za pošiljatelja i primatelja.</div>
+
+  <!-- FILTERI -->
+  <div class="toolbar">
+    <div class="filters">
+      <div class="field">
+        <select id="fYear">
+          <option value="">Godina kreiranja</option>
+          <option>2023</option><option>2024</option><option selected>2025</option><option>2026</option>
+        </select>
+      </div>
+      <div class="field">
+        <select id="fWine">
+          <option value="">Vinska godina</option>
+          <option>2023/2024</option><option selected>2024/2025</option><option>2025/2026</option>
+        </select>
+      </div>
+      <div class="field">
+        <select id="fType">
+          <option value="">Vrsta robe</option>
+          <option value="grozdje">Grožđe</option>
+          <option value="rinfuza">Vinski proizvod (rinfuza)</option>
+          <option value="pretpakovine">Pretpakovine</option>
+          <option value="ocat">Vinski ocat</option>
+        </select>
+      </div>
+      <div class="field">
+        <select id="fStatus">
+          <option value="">Status</option>
+          <option>Aktivan</option>
+          <option>Elektronički potpisan (pošiljatelj)</option>
+          <option>Završen</option>
+          <option>Storniran</option>
+        </select>
+      </div>
+      <div class="field"><input id="fRef" placeholder="MVV ili naziv" /></div>
+      <button class="btn" id="btnSearch">Pretraži</button>
+      <button class="btn" id="btnReset">Poništi</button>
+    </div>
+  </div>
+
+  <!-- OBJEDINJENA LISTA -->
+  <div class="card">
+    <div class="card-header"><h2>Moji ePD-ovi (objedinjeno)</h2><span class="hint">Prikaz za pošiljatelja i/ili primatelja</span></div>
+    <div class="card-body">
+      <table id="tblAll">
+        <thead>
+          <tr>
+            <th>Ref. broj (MVV)</th>
+            <th>Pošiljatelj</th>
+            <th>Primatelj</th>
+            <th>Vrsta robe</th>
+            <th>Kategorija / Sorta</th>
+            <th>Dodatni podaci</th>
+            <th>Količina</th>
+            <th>Datum i vrijeme kreiranja</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div class="hint" id="hintAll" style="margin-top:6px"></div>
+    </div>
+  </div>
+
+  <!-- ZBIRNI PREGLEDI -->
+  <div class="grid2">
+    <div class="card">
+      <div class="card-header"><h2>Ukupno prevezene količine – Grožđe (po sortama)</h2><span class="hint">u tonama</span></div>
+      <div class="card-body">
+        <table id="sumG"><thead><tr><th>Sorta</th><th>Količina (t)</th><th>Broj ePD-ova</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2>Ukupno prevezene količine – Mošt/Vino</h2><span class="hint">u hl</span></div>
+      <div class="card-body">
+        <table id="sumMV"><thead><tr><th>Vino/Mošt</th><th>Crno/roze (hl)</th><th>Bijelo (hl)</th><th>Broj ePD-ova</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-header"><h2>Ukupno prevezene količine – Vinski ocat</h2></div>
+      <div class="card-body">
+        <table id="sumOcat"><thead><tr><th>Kategorija</th><th>Ukupno (hl)</th><th>Broj ePD-ova</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2>Dostupne količine – Grožđe</h2><span class="hint">Iz Izjava (informativno)</span></div>
+      <div class="card-body">
+        <table id="availG"><thead><tr><th>Sorta</th><th>Količina (t)</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETALJA -->
+<div class="modal" id="dlg">
+  <div class="sheet" id="sheet">
+    <div class="sheet-header">
+      <div class="sheet-title" id="title">ePD detalji</div>
+      <div class="actions">
+        <button class="btn" id="btnPrint">Ispiši</button>
+        <button class="x" id="btnClose">Zatvori ✕</button>
+      </div>
+    </div>
+    <div class="sheet-body" id="printScope">
+      <!-- meta -->
+      <div class="section">
+        <div class="kv">
+          <div>Ref. broj (MVV)</div><div><b id="d_mvv">—</b></div>
+          <div>Status</div><div id="d_status">—</div>
+          <div>Vinska godina</div><div id="d_vg">—</div>
+          <div>Datum i vrijeme kreiranja</div><div id="d_dt">—</div>
+        </div>
+      </div>
+
+      <!-- Popis robe na ePD-u -->
+      <div class="section">
+        <h2>Popis robe za prijevoz na ePD-u</h2>
+        <table id="d_items">
+          <thead>
+            <tr>
+              <th>Vrsta robe</th>
+              <th>Kategorija vinskog proizvoda</th>
+              <th>Dodatni podaci</th>
+              <th>Količina</th>
+              <th>Vinogradarska zona</th>
+              <th>Podregija</th>
+              <th>Namjena</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <!-- Dostavni podaci -->
+      <div class="section">
+        <h2>Dostavni podaci</h2>
+        <div class="kv">
+          <div>Pošiljatelj – OIB</div><div id="d_ps_oib">—</div>
+          <div>Pošiljatelj – Naziv</div><div id="d_ps_naziv">—</div>
+          <div>Pošiljatelj – Adresa</div><div id="d_ps_adr">—</div>
+          <div>Mjesto otpreme (adresa ili lokacija)</div><div id="d_otprema">—</div>
+
+          <div>Primatelj – OIB</div><div id="d_pr_oib">—</div>
+          <div>Primatelj – Naziv</div><div id="d_pr_naziv">—</div>
+          <div>Primatelj – Adresa</div><div id="d_pr_adr">—</div>
+          <div>Mjesto prijema (adresa ili lokacija)</div><div id="d_prijem">—</div>
+
+          <div>Prijevoznik – OIB</div><div id="d_pv_oib">—</div>
+          <div>Prijevoznik – Naziv</div><div id="d_pv_naziv">—</div>
+          <div>Prijevoznik – Adresa</div><div id="d_pv_adr">—</div>
+          <div>Vrsta prijevoza i registracijski broj prijevoznog sredstva</div><div id="d_pv_vrsta">—</div>
+        </div>
+      </div>
+
+      <!-- Ukupno -->
+      <div class="grid2">
+        <div class="section">
+          <h2>Ukupno na ePD-u – Grožđe</h2>
+          <table id="d_tot_g"><thead><tr><th>Sorta</th><th>Količina (u tonama)</th></tr></thead><tbody></tbody></table>
+        </div>
+        <div class="section">
+          <h2>Ukupno na ePD-u – Mošt/Vino</h2>
+          <table id="d_tot_mv"><thead><tr><th>Vino/Mošt</th><th>Crno/roze (hl)</th><th>Bijelo (hl)</th></tr></thead><tbody></tbody></table>
+          <h2 style="margin-top:12px">Ukupno na ePD-u – Vinski ocat</h2>
+          <table id="d_tot_ocat"><thead><tr><th>Kategorija proizvoda</th><th>Ukupno (hl)</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+
+      <!-- Zapisnik -->
+      <div class="section">
+        <h2>Zapisnik o neprodanim količinama</h2>
+        <table id="d_zapisnik">
+          <thead><tr><th>Vrsta robe</th><th>Kategorija vinskog proizvoda</th><th>Dodatni podaci</th><th>Količina – Otpremljeno</th><th>Količina – Povrat</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <!-- Napomena -->
+      <div class="section">
+        <h2>Napomena uz storno</h2>
+        <div id="d_note" class="hint">—</div>
+      </div>
+
+      <!-- Dokumenti -->
+      <div class="section">
+        <h2>Dokumenti</h2>
+        <div id="d_docs" class="kv">
+          <div>e-Prateći dokument</div><div id="d_doc_epd">—</div>
+          <div>Zapisnik o neprodanim količinama</div><div id="d_doc_zap">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ====== Helpers za generiranje podataka ====== */
+function ent(name){ return {oib:String(Math.floor(1e10+Math.random()*9e10)), naziv:name, adr:'Adresa 1'}; }
+function pv(name,vrsta){ return {oib:String(Math.floor(1e10+Math.random()*9e10)), naziv:name, adr:'Adresa prijevoznika', vrsta}; }
+function grozdje(sort,boja,kol,u){ return {v:'grozdje', sort, boja, kol, u, zona:'C II', podregija:'Slavonija', namjena:'do vinarije radi daljnje prerade'}; }
+function rinfuza(kat,boje,kol,u){ return {v:'rinfuza', kat, boje, kol, u, zona:'C II', podregija:'Slavonija', namjena:'prodaja'}; }
+function pretpak(kat,boje,kol,u){ return {v:'pretpakovine', kat, boje, kol, u, zona:'C II', podregija:'Slavonija', namjena:'izravna prodaja'}; }
+function ocat(kol,u){ return {v:'ocat', kat:'Vinski ocat', boje:[], kol, u, zona:'C II', podregija:'Slavonija', namjena:'krajnja potrošnja'}; }
+function rec(role,mvv,vg,dt,status,items,ps,pr,otprema,prijem,prijevoznik){
+  return {id:mvv, role, mvv, vg, dt, year:(dt.slice(6,10)), status, items,
+    ps, pr, mjesta:{otpreme:otprema, prijema:prijem}, pv:prijevoznik||{oib:'',naziv:'',adr:'',vrsta:''},
+    docs:{epd:null,zapisnik:null}, note:''};
+}
+function withDocs(row,epd,zap){ if(epd) row.docs.epd={name:epd, url:'#'}; if(zap) row.docs.zapisnik={name:zap, url:'#'}; return row; }
+function withNote(row,txt){ row.note=txt||''; return row; }
+
+/* ====== DEMO PODACI ====== */
+const rows = [];
+rows.push(withDocs(rec('sender','1/2025','2024/2025','12.01.2025. 09:12','Završen',[grozdje('Graševina','bijelo',10,'t'), rinfuza('vino',['crno'],30,'hl')], ent('Vinarija Primjer d.o.o.'), ent('Vinarija ABC d.o.o.'), 'Skladište Kutjevo','Pogon A, Osijek', pv('Dostava d.o.o.','Kombi ZG-123-AB')), 'epd-1-2025.pdf'));
+rows.push(withNote(withDocs(rec('sender','2/2025','2024/2025','15.02.2025. 11:47','Storniran',[pretpak('vino',['bijelo'],35,'l')], ent('Vinarija Primjer d.o.o.'),ent('VinoExport d.o.o.'), 'Skladište Kutjevo','Centar VZ', pv('Transport Plus','Kamion VŽ-456-AB')), null,'zapisnik-2-2025.pdf'), 'Storno na zahtjev klijenta.'));
+rows.push(rec('sender','3/2025','2024/2025','25.02.2025. 15:21','Elektronički potpisan (pošiljatelj)',[rinfuza('mošt',['bijelo'],12,'hl'), rinfuza('vino',['crno'],50,'hl')], ent('OPG Kovač'), ent('Vinarija Jug d.o.o.'), 'Podrum 1','Distributivni centar', pv('Trans Jugo','Kamion ZG-456-AB')));
+rows.push(rec('receiver','6/2025','2024/2025','25.04.2025. 07:03','Aktivan',[ocat(10,'hl')], ent('Vino d.o.o.'), ent('Vinarija ABC d.o.o.'), 'Pogon B','Skladište'));
+rows.push(withDocs(rec('sender','7/2025','2024/2025','30.04.2025. 18:20','Završen',[grozdje('Plavac mali','crno',8.4,'t')], ent('OPG Marelić'), ent('Vina Oblica d.o.o.'), 'Imotski','Split DC'), 'epd-7-2025.pdf'));
+rows.push(rec('receiver','8/2025','2024/2025','03.05.2025. 10:05','Završen',[pretpak('vino',['bijelo'],2200,'l')], ent('Dalmacija vino d.o.o.'), ent('OPG Kovač'), 'Zadar skladište','Požega'));
+rows.push(rec('sender','9/2025','2024/2025','12.05.2025. 12:45','Aktivan',[rinfuza('vino',['roze'],15,'hl')], ent('Vina Ribarska d.o.o.'), ent('ABC Distribucija d.o.o.'), 'Šibenik','Zagreb'));
+rows.push(rec('receiver','10/2025','2024/2025','18.05.2025. 08:14','Elektronički potpisan (pošiljatelj)',[grozdje('Chardonnay','bijelo',5.2,'t')], ent('Vinarija Sjever d.o.o.'), ent('OPG Grgić'), 'Varaždin','Osijek'));
+rows.push(withDocs(rec('sender','11/2025','2024/2025','26.05.2025. 16:59','Završen',[rinfuza('vino',['crno'],70,'hl')], ent('Baranja d.o.o.'), ent('Hotel Panorama d.o.o.'), 'Kneževi Vinogradi','Osijek'), 'epd-11-2025.pdf'));
+rows.push(withNote(rec('receiver','12/2025','2024/2025','02.06.2025. 09:40','Storniran',[rinfuza('mošt',['bijelo'],6,'hl')], ent('Zagrebačke podrumske d.o.o.'), ent('Vinarija Primjer d.o.o.'), 'Zagreb','Zagreb DC'), 'Pogrešno kreiran dokument.'));
+rows.push(withDocs(rec('sender','13/2025','2024/2025','09.06.2025. 11:00','Završen',[pretpak('vino',['crno'],1800,'l')], ent('OPG Lukić'), ent('Retail Adriatic d.o.o.'), 'Kutina','Zagreb'), 'epd-13-2025.pdf'));
+rows.push(rec('receiver','14/2025','2024/2025','15.06.2025. 12:21','Aktivan',[ocat(3,'hl')], ent('Octarna d.d.'), ent('Restoran Vid d.o.o.'), 'Vukovar','Vukovar'));
+rows.push(rec('sender','15/2025','2024/2025','23.06.2025. 07:50','Završen',[grozdje('Malvazija','bijelo',4.1,'t')], ent('Istra Terra d.o.o.'), ent('OPG Juras'), 'Buzet','Pula'));
+rows.push(rec('receiver','16/2025','2024/2025','28.06.2025. 19:03','Elektronički potpisan (pošiljatelj)',[pretpak('vino',['roze'],900,'l')], ent('Distribucija Istok d.o.o.'), ent('Boutique Vino d.o.o.'), 'Vinkovci','Vinkovci'));
+rows.push(rec('sender','17/2025','2024/2025','05.07.2025. 13:33','Aktivan',[rinfuza('vino',['bijelo'],22,'hl')], ent('Vinarija Kamen d.o.o.'), ent('Restoran Ponto d.o.o.'), 'Makarska','Makarska'));
+
+/* Dostupne količine – informativno */
+const available = new Map([
+  ['Graševina', 245.6],['Riesling', 90.2],['Plavac mali', 12.0],['Malvazija', 7.0],
+  ['Chardonnay', 18.5],['Merlot', 23.7],['Pošip', 9.4],['Frankovka', 11.9]
+]);
+
+/* ===== UI helpers ===== */
+const $=s=>document.querySelector(s);
+function badge(status){
+  const c = status==='Aktivan'?'b-aktivan' : status==='Elektronički potpisan (pošiljatelj)'?'b-sender' : status==='Završen'?'b-finish' : 'b-storno';
+  return `<span class="badge ${c}">${status}</span>`;
+}
+function vrstaLabel(code){ return code==='grozdje'?'Grožđe':code==='rinfuza'?'Vinski proizvod (rinfuza)':code==='pretpakovine'?'Pretpakovine':'Vinski ocat'; }
+function dodatniLabel(it){ if(it.v==='grozdje') return it.boja||it.sort||'—'; if(it.boje?.length) return it.boje.join(', '); return '—'; }
+const fmt=n=>(Math.round(n*100)/100).toLocaleString('hr-HR');
+
+/* ===== Objedinjavanje po MVV (FS 3.11) ===== */
+const STATUS_ORDER = {
+  'Storniran': 4,
+  'Završen': 3,
+  'Elektronički potpisan (pošiljatelj)': 2,
+  'Aktivan': 1
+};
+function mergeRecords(list){
+  const byMvv = new Map();
+  for(const r of list){
+    if(!byMvv.has(r.mvv)){
+      byMvv.set(r.mvv, { ...r, roles:new Set([r.role]) });
+    }else{
+      const m = byMvv.get(r.mvv);
+      m.roles.add(r.role);
+      if((STATUS_ORDER[r.status]||0) > (STATUS_ORDER[m.status]||0)) m.status = r.status;
+      if(!m.docs?.epd && r.docs?.epd) m.docs.epd = r.docs.epd;
+      if(!m.docs?.zapisnik && r.docs?.zapisnik) m.docs.zapisnik = r.docs.zapisnik;
+      if((m.items?.length||0)===0 && (r.items?.length||0)>0) m.items = r.items;
+      if(r.dt && m.dt && r.dt !== m.dt){
+        const toISO = s=>{ const parts=s.split('.').map(x=>x.trim()); return `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')} ${parts[3]||'00:00'}`; };
+        if(toISO(r.dt) < toISO(m.dt)) m.dt = r.dt;
+      }
+      byMvv.set(r.mvv, m);
+    }
+  }
+  return [...byMvv.values()];
+}
+
+/* ===== Filter + render lista ===== */
+function currentFilter(){
+  const fy=$('#fYear').value, vg=$('#fWine').value, tp=$('#fType').value, st=$('#fStatus').value, ref=($('#fRef').value||'').toLowerCase();
+  const pass=r=>(!fy||(r.dt||'').includes(fy))&&(!vg||r.vg===vg)&&(!tp||(r.items[0]?.v===tp))&&(!st||r.status===st)&&(!ref||[r.mvv,r.ps?.naziv,r.pr?.naziv].join(' ').toLowerCase().includes(ref));
+  return rows.filter(pass);
+}
+function rowHTML(r){
+  const it=r.items[0]||{};
+  const kol=`${fmt(it.kol)} ${it.u||''}`;
+  return `<tr>
+    <td><a href="#" class="link mvv" data-id="${r.id}">${r.mvv}</a></td>
+    <td>${r.ps?.naziv||'—'}</td>
+    <td>${r.pr?.naziv||'—'}</td>
+    <td>${vrstaLabel(it.v||'')}</td>
+    <td>${it.v==='grozdje'?(it.sort||'—'):(it.kat||'—')}</td>
+    <td>${dodatniLabel(it)}</td>
+    <td>${kol}</td>
+    <td>${r.dt||'—'}</td>
+    <td>${badge(r.status)}</td>
+  </tr>`;
+}
+function renderTables(){
+  const filtered = currentFilter();
+  const unified = mergeRecords(filtered);
+  const tA=$('#tblAll tbody');
+  tA.innerHTML = unified.length ? unified.map(rowHTML).join('') : `<tr><td colspan="9" class="hint">Nema podataka</td></tr>`;
+  $('#hintAll').textContent = unified.length?'':'Pokušaj promijeniti filtere iznad.';
+  attachRowClicks();
+  renderAggregates(filtered);
+  renderAvailable();
+}
+
+/* ===== Zbirni pregledi ===== */
+function renderAggregates(list){
+  // Grožđe
+  const g=new Map();
+  list.forEach(r=>r.items.forEach(it=>{ if(it.v==='grozdje'){ const t = it.u==='kg'?it.kol/1000:(it.u==='t'?it.kol:0); const prev=g.get(it.sort)||{q:0,c:0}; g.set(it.sort,{q:prev.q+t, c:prev.c+1}); }}));
+  const gBody=$('#sumG tbody'); gBody.innerHTML=''; if(!g.size){ gBody.innerHTML='<tr><td>—</td><td>0</td><td>0</td></tr>'; } else { for(const [s,v] of g){ gBody.insertAdjacentHTML('beforeend',`<tr><td>${s}</td><td>${fmt(v.q)}</td><td>${v.c}</td></tr>`);} }
+
+  // Vino/Mošt
+  const mv={vino:{cr:0,bi:0,cnt:0}, most:{cr:0,bi:0,cnt:0}};
+  list.forEach(r=>r.items.forEach(it=>{
+    if(it.v==='rinfuza'||it.v==='pretpakovine'){
+      const kind=(it.kat||'').toLowerCase().includes('mošt')?'most':'vino';
+      const hl=it.u==='l'?it.kol/100:(it.u==='hl'?it.kol:0);
+      const isCr=['crno','roze'].includes((it.boje?.[0]||'').toLowerCase());
+      if(isCr) mv[kind].cr += hl; else mv[kind].bi += hl; mv[kind].cnt += 1;
+    }
+  }));
+  const mvBody=$('#sumMV tbody'); mvBody.innerHTML='';
+  ['vino','most'].forEach(k=>{ if(mv[k].cr>0||mv[k].bi>0||mv[k].cnt>0) mvBody.insertAdjacentHTML('beforeend',`<tr><td>${k==='vino'?'Vino':'Mošt'}</td><td>${fmt(mv[k].cr)}</td><td>${fmt(mv[k].bi)}</td><td>${mv[k].cnt}</td></tr>`); });
+  if(!mvBody.children.length) mvBody.innerHTML='<tr><td>—</td><td>0</td><td>0</td><td>0</td></tr>';
+
+  // Ocat
+  let oHl=0,oCnt=0; list.forEach(r=>r.items.forEach(it=>{ if(it.v==='ocat'){ const hl=it.u==='l'?it.kol/100:(it.u==='hl'?it.kol:0); oHl+=hl; oCnt++; } }));
+  $('#sumOcat tbody').innerHTML=`<tr><td>Vinski ocat</td><td>${fmt(oHl)}</td><td>${oCnt}</td></tr>`;
+}
+
+/* ===== Dostupne količine (informativno) ===== */
+function renderAvailable(){ const tb=$('#availG tbody'); tb.innerHTML=''; for(const [s,q] of available.entries()) tb.insertAdjacentHTML('beforeend',`<tr><td>${s}</td><td>${fmt(q)}</td></tr>`); }
+
+/* ===== Detalji (modal) ===== */
+function attachRowClicks(){
+  document.querySelectorAll('a.mvv').forEach(a=>{
+    a.onclick=(e)=>{ e.preventDefault(); const id=a.getAttribute('data-id'); const row=rows.find(x=>x.id===id)||rows.find(x=>x.mvv===id); if(row) openDetails(row); };
+  });
+}
+function openDetails(r){
+  $('#title').textContent=`ePD ${r.mvv} — detalji`;
+  $('#d_mvv').textContent=r.mvv; $('#d_status').innerHTML=badge(r.status); $('#d_vg').textContent=r.vg; $('#d_dt').textContent=r.dt;
+
+  // Popis robe
+  const tb=$('#d_items tbody'); tb.innerHTML='';
+  r.items.forEach(it=>{
+    tb.insertAdjacentHTML('beforeend', `<tr>
+      <td>${vrstaLabel(it.v)}</td>
+      <td>${it.v==='grozdje'?(it.sort||'—'):(it.kat||'—')}</td>
+      <td>${dodatniLabel(it)}</td>
+      <td>${fmt(it.kol)} ${it.u||''}</td>
+      <td>${it.zona||'—'}</td>
+      <td>${it.podregija||'—'}</td>
+      <td>${it.namjena||'—'}</td>
+    </tr>`);
+  });
+
+  // Dostavni podaci
+  $('#d_ps_oib').textContent=r.ps.oib||'—'; $('#d_ps_naziv').textContent=r.ps.naziv||'—'; $('#d_ps_adr').textContent=r.ps.adr||'—';
+  $('#d_otprema').textContent=r.mjesta.otpreme||'—';
+  $('#d_pr_oib').textContent=r.pr.oib||'—'; $('#d_pr_naziv').textContent=r.pr.naziv||'—'; $('#d_pr_adr').textContent=r.pr.adr||'—';
+  $('#d_prijem').textContent=r.mjesta.prijema||'—';
+  $('#d_pv_oib').textContent=r.pv.oib||'—'; $('#d_pv_naziv').textContent=r.pv.naziv||'—'; $('#d_pv_adr').textContent=r.pv.adr||'—'; $('#d_pv_vrsta').textContent=r.pv.vrsta||'—';
+
+  // Ukupno na ePD-u – Grožđe
+  const gMap=new Map(); r.items.forEach(it=>{ if(it.v==='grozdje'){ const tons=it.u==='t'?it.kol:(it.u==='kg'?it.kol/1000:0); gMap.set(it.sort,(gMap.get(it.sort)||0)+tons); }});
+  const tbg=$('#d_tot_g tbody'); tbg.innerHTML=''; if(!gMap.size) tbg.innerHTML='<tr><td>—</td><td>0</td></tr>'; else for(const [s,q] of gMap) tbg.insertAdjacentHTML('beforeend',`<tr><td>${s}</td><td>${fmt(q)}</td></tr>`);
+
+  // Ukupno na ePD-u – Mošt/Vino
+  const mv={vino:{cr:0,bi:0}, most:{cr:0,bi:0}}; r.items.forEach(it=>{
+    if(it.v==='rinfuza'||it.v==='pretpakovine'){
+      const kind=(it.kat||'').toLowerCase().includes('mošt')?'most':'vino';
+      const hl=it.u==='hl'?it.kol:(it.u==='l'?it.kol/100:0);
+      const isCr=['crno','roze'].includes((it.boje?.[0]||'').toLowerCase());
+      if(isCr) mv[kind].cr+=hl; else mv[kind].bi+=hl;
+    }
+  });
+  const tbmv=$('#d_tot_mv tbody'); tbmv.innerHTML='';
+  if(mv.vino.cr+mv.vino.bi>0) tbmv.insertAdjacentHTML('beforeend',`<tr><td>Vino</td><td>${fmt(mv.vino.cr)}</td><td>${fmt(mv.vino.bi)}</td></tr>`);
+  if(mv.most.cr+mv.most.bi>0) tbmv.insertAdjacentHTML('beforeend',`<tr><td>Mošt</td><td>${fmt(mv.most.cr)}</td><td>${fmt(mv.most.bi)}</td></tr>`);
+  if(!tbmv.children.length) tbmv.innerHTML='<tr><td>—</td><td>0</td><td>0</td></tr>';
+
+  // Ukupno na ePD-u – Vinski ocat
+  let o=0; r.items.forEach(it=>{ if(it.v==='ocat'){ const hl=it.u==='hl'?it.kol:(it.u==='l'?it.kol/100:0); o+=hl; }});
+  $('#d_tot_ocat tbody').innerHTML=`<tr><td>Vinski ocat</td><td>${fmt(o)}</td></tr>`;
+
+  // Zapisnik (demo)
+  const tz=$('#d_zapisnik tbody'); tz.innerHTML='';
+  r.items.forEach(it=>{
+    const otpr=`${fmt(it.kol)} ${it.u||''}`;
+    const pov = r.docs.zapisnik ? (it.v==='grozdje'? '0.5 t' : (it.u==='hl'?'0.5 hl':(it.u==='l'?'50 l':'0'))) : '0';
+    tz.insertAdjacentHTML('beforeend', `<tr>
+      <td>${vrstaLabel(it.v)}</td>
+      <td>${it.v==='grozdje'?(it.sort||'—'):(it.kat||'—')}</td>
+      <td>${dodatniLabel(it)}</td>
+      <td>${otpr}</td>
+      <td>${pov}</td>
+    </tr>`);
+  });
+
+  // Napomena
+  $('#d_note').textContent=r.note||'—';
+
+  // Dokumenti
+  const epdCtn = $('#d_doc_epd'); epdCtn.innerHTML = r.docs.epd ? `<span class="doc-link">${r.docs.epd.name}</span> <button class="btn" onclick="downloadDemo('${r.docs.epd.name}')">Preuzmi</button>` : '—';
+  const zapCtn = $('#d_doc_zap'); zapCtn.innerHTML = r.docs.zapisnik ? `<span class="doc-link">${r.docs.zapisnik.name}</span> <button class="btn" onclick="downloadDemo('${r.docs.zapisnik.name}')">Preuzmi</button>` : '—';
+
+  $('#dlg').classList.add('open');
+}
+$('#btnClose').onclick=()=>$('#dlg').classList.remove('open');
+$('#btnPrint').onclick=()=>window.print();
+
+/* demo downloader */
+function downloadDemo(filename){
+  const content = `Demo datoteka: ${filename}\nGenerirano za potrebe prototipa ISAP ePD detalja.`;
+  const blob=new Blob([content],{type:'application/pdf'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; a.click();
+}
+
+/* ===== Events ===== */
+$('#btnSearch').onclick=renderTables;
+$('#btnReset').onclick=()=>{$('#fYear').value='';$('#fWine').value='2024/2025';$('#fType').value='';$('#fStatus').value='';$('#fRef').value='';renderTables();};
+
+/* INIT */
+renderTables();
+</script>
+</body>
+</html>
